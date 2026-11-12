@@ -20,6 +20,10 @@ FlowDay is a productivity application designed to help users organize daily acti
 - React
 - TypeScript
 - Vite
+- Tailwind CSS
+- Firebase
+- Cloud Firestore
 - Google Gemini API
+- Node.js
 
 FlowDay – Organize Your Day, Find Your Flow.
