@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users collection
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if isOwner(uid);
+      allow create: if isSignedIn() && request.auth.uid == uid && incoming().uid == uid;
+      allow update: if isOwner(uid) && incoming().uid == existing().uid;
+      allow delete: if isOwner(uid);
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Schedules collection
+    match /schedules/{scheduleId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Notes collection
+    match /notes/{noteId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Focus Sessions collection
+    match /focus_sessions/{sessionId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    // Daily Reviews collection
+    match /daily_reviews/{reviewId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isOwner(existing().userId) && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

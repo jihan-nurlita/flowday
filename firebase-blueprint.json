@@ -1,0 +1,209 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document containing authentication metadata and preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "fullName": { "type": "string", "description": "User full name", "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "photoUrl": { "type": "string", "description": "User profile photo URL or data string", "maxLength": 50000 },
+        "createdAt": { "type": "string", "description": "Account creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last profile update timestamp" },
+        "preferences": {
+          "type": "object",
+          "description": "User preferences such as theme, language, and planner settings",
+          "properties": {
+            "themeMode": { "type": "string", "enum": ["light", "dark", "system"] },
+            "language": { "type": "string", "enum": ["en", "id"] },
+            "startOfWeek": { "type": "string", "enum": ["monday", "sunday"] },
+            "timeFormat": { "type": "string", "enum": ["12h", "24h"] },
+            "notificationEnabled": { "type": "boolean" },
+            "pomodoroDurationMinutes": { "type": "number" },
+            "shortBreakMinutes": { "type": "number" },
+            "longBreakMinutes": { "type": "number" }
+          }
+        }
+      },
+      "required": ["uid", "fullName", "email", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Daily priority task item with subtasks and reminders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "categoryId": { "type": "string" },
+        "priority": { "type": "string", "enum": ["high", "medium", "low", "urgent_important", "important", "urgent"] },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "completed"] },
+        "startDate": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "subtasks": { "type": "array" },
+        "reminderSettings": { "type": "object" },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "isCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "completedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "categoryId", "priority", "status", "isCompleted"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Activity category classification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 50 },
+        "color": { "type": "string" },
+        "icon": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "name", "color"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Calendar time block event with recurrence, reminders, and conflict support",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "categoryId": { "type": "string" },
+        "location": { "type": "string", "maxLength": 200 },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "date": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "isAllDay": { "type": "boolean" },
+        "reminderSettings": { "type": "object" },
+        "reminderEnabled": { "type": "boolean" },
+        "recurrenceRule": { "type": "object" },
+        "recurrenceExceptions": { "type": "array" },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "categoryId"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Personal note or idea document with tags, favorite, and trash bin support",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 50000 },
+        "categoryId": { "type": "string" },
+        "tags": { "type": "array" },
+        "color": { "type": "string" },
+        "isPinned": { "type": "boolean" },
+        "isFavorite": { "type": "boolean" },
+        "isDeleted": { "type": "boolean" },
+        "deletedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "content", "categoryId"]
+    },
+    "FocusSession": {
+      "title": "FocusSession",
+      "description": "Recorded deep focus flow or pomodoro session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "duration": { "type": "number" },
+        "sessionType": { "type": "string", "enum": ["pomodoro", "short_break", "long_break", "deep_work"] },
+        "completed": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "duration", "sessionType", "completed", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app reminder or notification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 150 },
+        "message": { "type": "string", "maxLength": 500 },
+        "body": { "type": "string", "maxLength": 500 },
+        "type": { "type": "string", "enum": ["task", "schedule", "focus", "review", "system"] },
+        "relatedId": { "type": "string" },
+        "relatedEntityId": { "type": "string" },
+        "relatedEntityType": { "type": "string", "enum": ["task", "schedule", "focus", "note", "system"] },
+        "isRead": { "type": "boolean" },
+        "scheduledAt": { "type": "string" },
+        "readAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "delivered", "dismissed"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "message", "type", "isRead", "createdAt"]
+    },
+    "DailyReview": {
+      "title": "DailyReview",
+      "description": "Daily productivity reflection summary",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string" },
+        "completedTasks": { "type": "number" },
+        "totalTasks": { "type": "number" },
+        "focusDuration": { "type": "number" },
+        "reflection": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "date", "completedTasks", "totalTasks", "focusDuration", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile collection partitioned by UID"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Daily priority tasks filtered by userId"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Category tags owned by userId"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "Schedule",
+      "description": "Calendar events owned by userId"
+    },
+    "/notes/{noteId}": {
+      "schema": "Note",
+      "description": "Personal notes owned by userId"
+    },
+    "/focus_sessions/{sessionId}": {
+      "schema": "FocusSession",
+      "description": "Logged focus sessions owned by userId"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notifications owned by userId"
+    },
+    "/daily_reviews/{reviewId}": {
+      "schema": "DailyReview",
+      "description": "Daily review reflection logs owned by userId"
+    }
+  }
+}

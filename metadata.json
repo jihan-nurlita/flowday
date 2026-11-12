@@ -1,0 +1,6 @@
+{
+  "name": "FlowDay",
+  "description": "Smart Daily Planner & Productivity Manager. Plan your day, organize tasks, manage schedules, maintain deep focus, capture notes, and track real productivity.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
