@@ -1,20 +1,25 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# FlowDay
 
-# Run and deploy your AI Studio app
+Personal Productivity & Daily Planning Application
 
-This contains everything you need to run your app locally.
+FlowDay is a productivity application designed to help users organize daily activities, manage tasks, build positive habits, and maintain a balanced routine through a clean, intuitive, and user-friendly experience.
 
-View your app in AI Studio: https://ai.studio/apps/7cf1180e-b348-445f-8e81-2ed4f81390f2
+## Features
 
-## Run Locally
+- Task Management – Create, organize, and manage daily tasks.
+- Daily Planner – Plan and organize daily activities.
+- Habit Tracker – Build and maintain positive habits.
+- Calendar – View and manage schedules and important dates.
+- Notes – Write and organize personal notes.
+- Reminders – Stay on track with timely notifications.
+- Progress Tracking – Monitor productivity and personal progress.
+- User Authentication – Secure account access and management.
 
-**Prerequisites:**  Node.js
+## Built With
 
+- React
+- TypeScript
+- Vite
+- Google Gemini API
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+FlowDay – Organize Your Day, Find Your Flow.
