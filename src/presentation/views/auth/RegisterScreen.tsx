@@ -104,7 +104,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onNavigateToLogi
             type="text"
             required
             autoComplete="name"
-            placeholder="e.g., Sarah Jenkins"
+            placeholder="Aisha Noor"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
