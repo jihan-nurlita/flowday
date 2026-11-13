@@ -13,7 +13,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   className = '',
 }) => {
   if (!content) {
-    return <p className="text-xs italic text-[#898493]">Empty note</p>;
+    return <p className="text-xs italic text-[#6E687B]">Empty note</p>;
   }
 
   const lines = content.split('\n');
@@ -40,20 +40,20 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         parts.push(
           <code
             key={keyIdx++}
-            className="px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[11px] text-[#A995D8]"
+            className="px-1.5 py-0.5 rounded bg-black/8 font-mono text-[11px] text-[#5B4593]"
           >
             {matchedStr.slice(1, -1)}
           </code>
         );
       } else if (matchedStr.startsWith('**') && matchedStr.endsWith('**')) {
         parts.push(
-          <strong key={keyIdx++} className="font-bold text-[#34313D] dark:text-[#F4F2F7]">
+          <strong key={keyIdx++} className="font-bold text-[#292536]">
             {matchedStr.slice(2, -2)}
           </strong>
         );
       } else if (matchedStr.startsWith('*') && matchedStr.endsWith('*')) {
         parts.push(
-          <em key={keyIdx++} className="italic text-[#34313D] dark:text-[#F4F2F7]">
+          <em key={keyIdx++} className="italic text-[#393344]">
             {matchedStr.slice(1, -1)}
           </em>
         );
@@ -70,28 +70,28 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   };
 
   return (
-    <div className={`space-y-1.5 text-xs text-[#34313D] dark:text-[#F4F2F7] leading-relaxed ${className}`}>
+    <div className={`space-y-1.5 text-xs text-[#393344] leading-relaxed ${className}`}>
       {lines.map((line, index) => {
         const trimmed = line.trim();
 
         // 1. Headings
         if (line.startsWith('# ')) {
           return (
-            <h1 key={index} className="text-base sm:text-lg font-bold text-[#34313D] dark:text-[#F4F2F7] mt-2 mb-1">
+            <h1 key={index} className="text-base sm:text-lg font-bold text-[#292536] mt-2 mb-1">
               {renderInlineFormatted(line.slice(2))}
             </h1>
           );
         }
         if (line.startsWith('## ')) {
           return (
-            <h2 key={index} className="text-sm sm:text-base font-bold text-[#34313D] dark:text-[#F4F2F7] mt-2 mb-1">
+            <h2 key={index} className="text-sm sm:text-base font-bold text-[#292536] mt-2 mb-1">
               {renderInlineFormatted(line.slice(3))}
             </h2>
           );
         }
         if (line.startsWith('### ')) {
           return (
-            <h3 key={index} className="text-xs sm:text-sm font-bold text-[#34313D] dark:text-[#F4F2F7] mt-1.5 mb-1">
+            <h3 key={index} className="text-xs sm:text-sm font-bold text-[#292536] mt-1.5 mb-1">
               {renderInlineFormatted(line.slice(4))}
             </h3>
           );
@@ -113,20 +113,20 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             >
               <button
                 type="button"
-                className="mt-0.5 shrink-0 text-[#898493] group-hover:text-[#A995D8] transition-colors"
+                className="mt-0.5 shrink-0 text-[#5D5868] group-hover:text-[#593F94] transition-colors"
                 aria-label={isChecked ? 'Mark unchecked' : 'Mark checked'}
               >
                 {isChecked ? (
-                  <CheckSquare className="w-4 h-4 text-[#B5DCCB] fill-[#B5DCCB]/20" />
+                  <CheckSquare className="w-4 h-4 text-[#3A8E6C] fill-[#B5DCCB]/30" />
                 ) : (
-                  <Square className="w-4 h-4 text-[#898493]" />
+                  <Square className="w-4 h-4 text-[#6E687B]" />
                 )}
               </button>
               <span
                 className={`flex-1 min-w-0 transition-all ${
                   isChecked
-                    ? 'line-through text-[#898493] dark:text-[#787382]'
-                    : 'text-[#34313D] dark:text-[#F4F2F7]'
+                    ? 'line-through text-[#6E687B]'
+                    : 'text-[#393344]'
                 }`}
               >
                 {renderInlineFormatted(itemText)}
@@ -139,7 +139,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         if (line.match(/^[-*]\s+/)) {
           return (
             <div key={index} className="flex items-start gap-2 pl-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#A995D8] mt-1.5 shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#6D56A8] mt-1.5 shrink-0" />
               <div className="flex-1 min-w-0">{renderInlineFormatted(line.replace(/^[-*]\s+/, ''))}</div>
             </div>
           );
@@ -150,7 +150,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         if (numMatch) {
           return (
             <div key={index} className="flex items-start gap-2 pl-2">
-              <span className="text-[11px] font-mono font-semibold text-[#A995D8] w-4 shrink-0">
+              <span className="text-[11px] font-mono font-semibold text-[#6D56A8] w-4 shrink-0">
                 {numMatch[1]}.
               </span>
               <div className="flex-1 min-w-0">{renderInlineFormatted(numMatch[2])}</div>
@@ -163,7 +163,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
           return (
             <blockquote
               key={index}
-              className="border-l-3 border-[#A995D8] pl-3 py-1 my-1 italic text-[#898493] dark:text-[#9E99A8] bg-black/2 dark:bg-white/5 rounded-r-lg"
+              className="border-l-3 border-[#A995D8] pl-3 py-1 my-1 italic text-[#5D5868] bg-black/5 rounded-r-lg"
             >
               {renderInlineFormatted(line.slice(2))}
             </blockquote>

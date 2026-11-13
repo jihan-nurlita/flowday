@@ -40,6 +40,7 @@ export const NotesView: React.FC = () => {
     restoreNote,
     deleteNotePermanently,
     emptyTrashNotes,
+    t,
   } = useFlow();
 
   // Navigation & View Mode
@@ -187,10 +188,10 @@ export const NotesView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-            My Notes
+            {t.notes.title}
           </h2>
           <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5">
-            Organize your thoughts, ideas, and reflections in soft pastel cards.
+            {t.notes.subtitle}
           </p>
         </div>
 
@@ -210,7 +211,7 @@ export const NotesView: React.FC = () => {
             size="md"
             onClick={handleOpenNewNote}
           >
-            New Note
+            {t.notes.newNote}
           </PrimaryButton>
         </div>
       </div>
@@ -311,7 +312,7 @@ export const NotesView: React.FC = () => {
                 : 'text-[#898493] hover:text-[#34313D] dark:hover:text-white'
             }`}
           >
-            All Notes ({stats.activeNotesCount})
+            {t.notes.allNotes} ({stats.activeNotesCount})
           </button>
 
           <button
@@ -324,7 +325,7 @@ export const NotesView: React.FC = () => {
             }`}
           >
             <Pin className="w-3 h-3" />
-            <span>Pinned ({stats.pinnedNotesCount})</span>
+            <span>{t.notes.pinned} ({stats.pinnedNotesCount})</span>
           </button>
 
           <button
@@ -337,7 +338,7 @@ export const NotesView: React.FC = () => {
             }`}
           >
             <Star className="w-3 h-3" />
-            <span>Favorites ({stats.favoriteNotesCount})</span>
+            <span>{t.notes.favorites} ({stats.favoriteNotesCount})</span>
           </button>
 
           <button
@@ -350,7 +351,7 @@ export const NotesView: React.FC = () => {
             }`}
           >
             <Trash2 className="w-3 h-3" />
-            <span>Trash ({stats.trashNotesCount})</span>
+            <span>{t.notes.trash} ({stats.trashNotesCount})</span>
           </button>
         </div>
 
@@ -363,7 +364,7 @@ export const NotesView: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search title, content, tag..."
+              placeholder={t.notes.searchPlaceholder}
               className="w-full pl-8 pr-7 py-2 text-xs rounded-xl border border-[#EEEAF2] dark:border-[#2D2838] bg-white dark:bg-[#201D27] text-[#34313D] dark:text-[#F4F2F7] focus:outline-hidden focus:border-[#A995D8] transition-colors"
             />
             {searchQuery && (

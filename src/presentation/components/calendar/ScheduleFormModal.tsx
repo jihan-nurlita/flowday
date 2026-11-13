@@ -32,13 +32,29 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
   initialDate,
   initialTime,
 }) => {
-  const { schedules, categories, createSchedule, updateSchedule } = useFlow();
+  const { user, schedules, categories, createSchedule, updateSchedule } = useFlow();
+
+  const prefDurationMinutes = Math.max(5, user?.preferences?.defaultEventDurationMinutes ?? 60);
+  const prefReminderRaw = user?.preferences?.defaultScheduleReminder || '15m';
+  const mappedPrefReminder: ScheduleReminderType =
+    prefReminderRaw === 'at_time'
+      ? 'at_event'
+      : prefReminderRaw === '1d'
+      ? '1h'
+      : (prefReminderRaw as ScheduleReminderType);
+
+  const computeEndTimeFromStart = (startHHMM: string, durationMins: number): string => {
+    const [hStr, mStr] = startHHMM.split(':');
+    const totalStart = (parseInt(hStr, 10) || 9) * 60 + (parseInt(mStr, 10) || 0);
+    const clampedEnd = Math.min(23 * 60 + 59, totalStart + durationMins);
+    const eh = Math.floor(clampedEnd / 60);
+    const em = clampedEnd % 60;
+    return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+  };
 
   const defaultDate = initialDate || getTodayDateString();
   const defaultStartTime = initialTime || '09:00';
-  const defaultEndTime = initialTime
-    ? `${String((parseInt(initialTime.split(':')[0], 10) + 1) % 24).padStart(2, '0')}:${initialTime.split(':')[1] || '00'}`
-    : '10:00';
+  const defaultEndTime = computeEndTimeFromStart(defaultStartTime, prefDurationMinutes);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -111,7 +127,7 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
       setStartTime(initialTime || '09:00');
       setEndTime(defaultEndTime);
       setIsAllDay(false);
-      setReminderType('15m');
+      setReminderType(mappedPrefReminder);
       setCustomReminderTime('');
       setRepeatFreq('none');
       setRepeatInterval(1);
@@ -123,7 +139,7 @@ export const ScheduleFormModal: React.FC<ScheduleFormModalProps> = ({
     setValidationError('');
     setConflicts([]);
     setIgnoreConflicts(false);
-  }, [editingSchedule, isOpen, categories, initialDate, initialTime, defaultEndTime]);
+  }, [editingSchedule, isOpen, categories, initialDate, initialTime, defaultEndTime, mappedPrefReminder]);
 
   // Check for conflicts in real-time
   useEffect(() => {

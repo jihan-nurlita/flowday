@@ -18,11 +18,17 @@ import {
 } from 'lucide-react';
 
 export const FocusView: React.FC = () => {
-  const { timerState, tasks, focusSessions, recordFocusSession } = useFlow();
+  const { user, timerState, tasks, focusSessions, recordFocusSession, t, language } = useFlow();
 
   const [selectedTask, setSelectedTask] = useState<string>('');
 
-  const activeTasks = tasks.filter((t) => !t.isCompleted);
+  const pomodoroMins = Math.max(1, user?.preferences?.pomodoroDurationMinutes ?? 25);
+  const shortBreakMins = Math.max(1, user?.preferences?.shortBreakMinutes ?? 5);
+  const longBreakMins = Math.max(1, user?.preferences?.longBreakMinutes ?? 15);
+  const longBreakInterval = Math.max(1, user?.preferences?.longBreakInterval ?? 4);
+  const currentCyclePos = timerState.completedFocusCycles % longBreakInterval;
+
+  const activeTasks = tasks.filter((tItem) => !tItem.isCompleted);
 
   const formatTimeDisplay = (totalSecs: number) => {
     const mins = Math.floor(totalSecs / 60);
@@ -48,8 +54,8 @@ export const FocusView: React.FC = () => {
   };
 
   const taskOptions = [
-    { value: '', label: 'General Flow / No Task Attached' },
-    ...activeTasks.map((t) => ({ value: t.id, label: t.title })),
+    { value: '', label: t.focus.generalFlow },
+    ...activeTasks.map((tItem) => ({ value: tItem.id, label: tItem.title })),
   ];
 
   return (
@@ -57,10 +63,10 @@ export const FocusView: React.FC = () => {
       {/* 1. Header */}
       <div>
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-          Focus & Pomodoro
+          {t.focus.title}
         </h2>
         <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5">
-          Eliminate digital noise, focus on one intention, and track real completed flow blocks.
+          {t.focus.subtitle}
         </p>
       </div>
 
@@ -80,12 +86,12 @@ export const FocusView: React.FC = () => {
             />
 
             {/* Mode Selector Tabs */}
-            <div className="flex items-center gap-1.5 p-1.5 bg-[#FAF9FC] dark:bg-[#17151D] border border-[#EEEAF2] dark:border-[#2D2838] rounded-2xl mb-8 select-none overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1.5 p-1.5 bg-[#FAF9FC] dark:bg-[#17151D] border border-[#EEEAF2] dark:border-[#2D2838] rounded-2xl mb-6 select-none overflow-x-auto max-w-full">
               {[
-                { id: 'pomodoro' as FocusSessionType, label: 'Pomodoro (25m)' },
-                { id: 'short_break' as FocusSessionType, label: 'Short Break (5m)' },
-                { id: 'long_break' as FocusSessionType, label: 'Long Break (15m)' },
-                { id: 'deep_work' as FocusSessionType, label: 'Deep Work (45m)' },
+                { id: 'pomodoro' as FocusSessionType, label: `${t.focus.pomodoro} (${pomodoroMins}m)` },
+                { id: 'short_break' as FocusSessionType, label: `${t.focus.shortBreak} (${shortBreakMins}m)` },
+                { id: 'long_break' as FocusSessionType, label: `${t.focus.longBreak} (${longBreakMins}m)` },
+                { id: 'deep_work' as FocusSessionType, label: `${t.focus.deepWork} (45m)` },
               ].map((m) => (
                 <button
                   key={m.id}
@@ -99,6 +105,26 @@ export const FocusView: React.FC = () => {
                   {m.label}
                 </button>
               ))}
+            </div>
+
+            {/* Long Break Cycle Progress Indicator */}
+            <div className="flex items-center gap-2 mb-4 text-[11px] text-[#898493] dark:text-[#9E99A8]">
+              <span>{t.focus.cycleProgress}:</span>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: longBreakInterval }).map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      idx < currentCyclePos
+                        ? 'bg-[#A995D8]'
+                        : 'bg-[#EEEAF2] dark:bg-[#2D2838]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="font-mono font-semibold text-[#34313D] dark:text-[#F4F2F7]">
+                {currentCyclePos}/{longBreakInterval}
+              </span>
             </div>
 
             {/* Circular Visual Countdown */}
@@ -130,7 +156,7 @@ export const FocusView: React.FC = () => {
                   {formatTimeDisplay(timerState.timeLeft)}
                 </span>
                 <span className="text-xs text-[#898493] dark:text-[#9E99A8] mt-2 font-semibold capitalize">
-                  {timerState.isRunning ? 'Flow state active' : 'Paused / Ready'}
+                  {timerState.isRunning ? t.focus.activeState : t.focus.pausedState}
                 </span>
               </div>
             </div>
@@ -138,7 +164,7 @@ export const FocusView: React.FC = () => {
             {/* Session Information: Linked Task Selector */}
             <div className="w-full max-w-sm my-6 text-left">
               <DropdownField
-                label="Target Task for this Session:"
+                label={t.focus.targetTask}
                 options={taskOptions}
                 value={selectedTask}
                 onChange={(e) => {
@@ -164,7 +190,7 @@ export const FocusView: React.FC = () => {
                   onClick={timerState.pause}
                   size="lg"
                 >
-                  Pause Session
+                  {t.focus.pauseSession}
                 </SecondaryButton>
               ) : (
                 <PrimaryButton
@@ -172,7 +198,7 @@ export const FocusView: React.FC = () => {
                   onClick={timerState.start}
                   size="lg"
                 >
-                  Start Flow
+                  {t.focus.startFlow}
                 </PrimaryButton>
               )}
 
@@ -193,14 +219,14 @@ export const FocusView: React.FC = () => {
         <div className="space-y-6">
           <BaseCard>
             <h3 className="text-xs font-bold text-[#898493] dark:text-[#9E99A8] uppercase tracking-wider mb-4">
-              Focus Metrics
+              {t.focus.focusMetrics}
             </h3>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3.5 rounded-xl bg-[#FAF9FC] dark:bg-[#17151D] border border-[#EEEAF2] dark:border-[#2D2838]">
                 <div className="flex items-center gap-1.5 text-xs text-[#898493]">
                   <Flame className="w-3.5 h-3.5 text-[#F1B8CC]" />
-                  <span>Sessions</span>
+                  <span>{t.focus.sessions}</span>
                 </div>
                 <div className="text-xl font-bold font-mono text-[#34313D] dark:text-[#F4F2F7] mt-1">
                   {focusSessions.length}
@@ -210,7 +236,7 @@ export const FocusView: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-[#FAF9FC] dark:bg-[#17151D] border border-[#EEEAF2] dark:border-[#2D2838]">
                 <div className="flex items-center gap-1.5 text-xs text-[#898493]">
                   <Target className="w-3.5 h-3.5 text-[#B5DCCB]" />
-                  <span>Total Time</span>
+                  <span>{t.focus.totalTime}</span>
                 </div>
                 <div className="text-xl font-bold font-mono text-[#34313D] dark:text-[#F4F2F7] mt-1">
                   {Math.round(
@@ -224,14 +250,14 @@ export const FocusView: React.FC = () => {
 
           <BaseCard>
             <h3 className="text-sm font-bold text-[#34313D] dark:text-[#F4F2F7] mb-3">
-              Recorded Focus History
+              {t.focus.recordedHistory}
             </h3>
 
             {focusSessions.length === 0 ? (
               <EmptyState
                 icon={Timer}
-                title="No focus history yet"
-                description="Complete your first flow session to record duration and streak progress."
+                title={t.focus.noHistoryTitle}
+                description={t.focus.noHistoryDesc}
               />
             ) : (
               <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
@@ -245,7 +271,7 @@ export const FocusView: React.FC = () => {
                         {s.sessionType.replace('_', ' ')}
                       </span>
                       <p className="text-[11px] text-[#898493] dark:text-[#9E99A8]">
-                        {formatReadableDate(s.createdAt)}
+                        {formatReadableDate(s.createdAt, language)}
                       </p>
                     </div>
 

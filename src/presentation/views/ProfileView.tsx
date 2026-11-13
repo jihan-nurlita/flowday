@@ -30,7 +30,7 @@ export const ProfileView: React.FC = () => {
     deleteAccount,
     logout,
   } = useAuth();
-  const { stats, tasks, focusSessions } = useFlow();
+  const { stats, tasks, language } = useFlow();
 
   // Profile Edit State
   const [fullName, setFullName] = useState(currentUser?.fullName || currentUser?.name || '');
@@ -48,6 +48,7 @@ export const ProfileView: React.FC = () => {
   // Delete Account Confirmation
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState<string | null>(null);
 
   // File Input Ref for Photo Upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,10 +135,11 @@ export const ProfileView: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
+    setDeleteErrorMsg(null);
     try {
       await deleteAccount();
     } catch (err: any) {
-      alert(err.message || 'Gagal menghapus akun. Silakan login ulang terlebih dahulu.');
+      setDeleteErrorMsg(err.message || 'Gagal menghapus akun. Silakan login ulang terlebih dahulu.');
       setIsDeleting(false);
       setIsDeleteModalOpen(false);
     }
@@ -145,7 +147,7 @@ export const ProfileView: React.FC = () => {
 
   const currentPrefs = currentUser?.preferences || {
     themeMode: 'system' as const,
-    language: 'id' as const,
+    language: 'en' as const,
     startOfWeek: 'monday' as const,
     timeFormat: '24h' as const,
     notificationEnabled: true,
@@ -250,7 +252,7 @@ export const ProfileView: React.FC = () => {
               <div className="p-2.5 rounded-xl bg-[#FAF9FC] dark:bg-[#17151D] border border-[#EEEAF2] dark:border-[#2D2838]">
                 <span className="text-[10px] text-[#898493] block">Bergabung Sejak</span>
                 <span className="text-xs font-mono font-semibold text-[#34313D] dark:text-[#F4F2F7]">
-                  {formatReadableDate(currentUser?.createdAt)}
+                  {formatReadableDate(currentUser?.createdAt, language)}
                 </span>
               </div>
 
@@ -434,6 +436,12 @@ export const ProfileView: React.FC = () => {
 
       {/* 6. Danger Zone: Delete Account */}
       <BaseCard className="border-[#E07A5F]/30 bg-[#FCF3F0]/20 dark:bg-[#342020]/20">
+        {deleteErrorMsg && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-[#FCF3F0] dark:bg-[#342020] border border-[#E07A5F] text-xs text-[#E07A5F] mb-4">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{deleteErrorMsg}</span>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-[#E07A5F]">

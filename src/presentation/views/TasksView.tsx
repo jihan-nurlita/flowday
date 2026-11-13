@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFlow } from '../state/FlowContext';
 import { Task, normalizePriority } from '../../domain/entities/task';
 import { TaskCard } from '../components/cards/AppCards';
@@ -27,13 +27,18 @@ import {
 
 export const TasksView: React.FC = () => {
   const {
+    user,
     tasks,
     categories,
     stats,
     toggleTaskComplete,
     deleteTask,
     openQuickCapture,
+    t,
   } = useFlow();
+
+  const prefDefaultSort = user?.preferences?.defaultTaskSort || 'newest';
+  const prefDefaultView = user?.preferences?.defaultTaskView || 'list';
 
   // Search & Filter & Sort state
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,11 +46,20 @@ export const TasksView: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'upcoming' | 'overdue' | 'no_deadline'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'due_date' | 'priority' | 'alphabetical'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'due_date' | 'priority' | 'alphabetical'>(prefDefaultSort);
 
   // UI View Mode (List vs Grid)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(prefDefaultView);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+
+  // Sync default sort/view when changed in Settings
+  useEffect(() => {
+    setViewMode(prefDefaultView);
+  }, [prefDefaultView]);
+
+  useEffect(() => {
+    setSortBy(prefDefaultSort);
+  }, [prefDefaultSort]);
 
   // Modals state
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
@@ -72,7 +86,7 @@ export const TasksView: React.FC = () => {
     setPriorityFilter('all');
     setCategoryFilter('all');
     setDateFilter('all');
-    setSortBy('newest');
+    setSortBy(prefDefaultSort);
   };
 
   // Helper to map category IDs to names for search
@@ -182,10 +196,10 @@ export const TasksView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-            My Tasks
+            {t.tasks.title}
           </h1>
           <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5">
-            Organize your work, prioritize essentials, and find your daily flow.
+            {t.tasks.subtitle}
           </p>
         </div>
 
@@ -196,7 +210,7 @@ export const TasksView: React.FC = () => {
             className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-[#201D27] border border-[#EEEAF2] dark:border-[#2D2838] text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7] transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
           >
             <Tag className="w-3.5 h-3.5 text-[#A995D8]" />
-            <span>Categories</span>
+            <span>{t.tasks.categories}</span>
           </button>
 
           <PrimaryButton
@@ -207,7 +221,7 @@ export const TasksView: React.FC = () => {
             }}
             size="md"
           >
-            Add Task
+            {t.tasks.addTask}
           </PrimaryButton>
         </div>
       </div>
@@ -226,7 +240,7 @@ export const TasksView: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-1.5">
-            <span className="text-xs font-semibold">Active Tasks</span>
+            <span className="text-xs font-semibold">{t.tasks.activeCount}</span>
             <div className="w-7 h-7 rounded-lg bg-[#F4F1FA] dark:bg-[#2C253B] flex items-center justify-center text-[#A995D8]">
               <CheckSquare className="w-3.5 h-3.5" />
             </div>
@@ -249,7 +263,7 @@ export const TasksView: React.FC = () => {
           }`}
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-1.5">
-            <span className="text-xs font-semibold">Completed</span>
+            <span className="text-xs font-semibold">{t.tasks.completedCount}</span>
             <div className="w-7 h-7 rounded-lg bg-[#EBF7F2] dark:bg-[#1E3329] flex items-center justify-center text-[#B5DCCB]">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>
@@ -324,7 +338,7 @@ export const TasksView: React.FC = () => {
           <SearchField
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by title, description, or category..."
+            placeholder={t.tasks.searchPlaceholder}
           />
         </div>
 
@@ -341,7 +355,7 @@ export const TasksView: React.FC = () => {
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
-            <span>Filters</span>
+            <span>{t.tasks.filters}</span>
             {activeFiltersCount > 0 && (
               <span className="w-5 h-5 rounded-full bg-[#A995D8] text-white text-[10px] font-bold flex items-center justify-center">
                 {activeFiltersCount}

@@ -1,8 +1,7 @@
 import React from 'react';
 import { useFlow } from '../../state/FlowContext';
 import { formatReadableDate } from '../../../core/utils/date';
-import { X, User as UserIcon, Mail, Calendar, ShieldCheck, Flame, CheckCircle2, Award } from 'lucide-react';
-import { PrimaryButton, SecondaryButton } from '../buttons/AppButtons';
+import { X, ShieldCheck, Flame, CheckCircle2, Award } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -13,7 +12,6 @@ interface ProfileModalProps {
 export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
-  onOpenSettings,
 }) => {
   const { user, stats, tasks } = useFlow();
 
@@ -102,34 +100,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="flex items-center justify-between">
             <span>Data Storage:</span>
             <span className="text-[#B5DCCB] font-medium">Local DB + Firestore Ready</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-[#EEEAF2] dark:border-[#2D2838] mt-3">
-          <button
-            onClick={() => {
-              onClose();
-              onOpenSettings();
-            }}
-            className="text-xs font-semibold text-[#A995D8] hover:underline cursor-pointer"
-          >
-            Buka Pengaturan Akun →
-          </button>
-
-          <div className="flex items-center gap-2">
-            <SecondaryButton onClick={onClose} size="sm">
-              Tutup
-            </SecondaryButton>
-            <PrimaryButton
-              onClick={() => {
-                onClose();
-                onOpenSettings();
-              }}
-              size="sm"
-            >
-              Edit Profil
-            </PrimaryButton>
           </div>
         </div>
       </div>

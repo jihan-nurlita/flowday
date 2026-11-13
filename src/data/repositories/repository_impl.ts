@@ -14,6 +14,10 @@ import { AppNotification } from '../../domain/entities/notification';
 import { DailyReview } from '../../domain/entities/daily_review';
 import { User } from '../../domain/entities/user';
 import {
+  ProductivityGoals,
+  DEFAULT_PRODUCTIVITY_GOALS,
+} from '../../domain/entities/productivity_goal';
+import {
   ITaskRepository,
   IScheduleRepository,
   ICategoryRepository,
@@ -22,6 +26,7 @@ import {
   INotificationRepository,
   IDailyReviewRepository,
   IUserRepository,
+  IProductivityGoalRepository,
 } from '../../domain/repositories/contracts';
 
 export class TaskRepository implements ITaskRepository {
@@ -636,6 +641,45 @@ export class UserRepository implements IUserRepository {
   }
 }
 
+export class ProductivityGoalRepository implements IProductivityGoalRepository {
+  async getByUserId(userId: string): Promise<ProductivityGoals | null> {
+    const list = storageEngine.getCollection<ProductivityGoals>('productivity_goals');
+    return list.find((g) => g.userId === userId) || null;
+  }
+
+  async saveGoals(
+    userId: string,
+    goals: Partial<Omit<ProductivityGoals, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+  ): Promise<ProductivityGoals> {
+    const list = storageEngine.getCollection<ProductivityGoals>('productivity_goals');
+    const idx = list.findIndex((g) => g.userId === userId);
+    const nowIso = new Date().toISOString();
+
+    if (idx !== -1) {
+      const updated: ProductivityGoals = {
+        ...list[idx],
+        ...goals,
+        updatedAt: nowIso,
+      };
+      list[idx] = updated;
+      storageEngine.setCollection<ProductivityGoals>('productivity_goals', list);
+      return updated;
+    }
+
+    const created: ProductivityGoals = {
+      id: generateId('goal'),
+      userId,
+      ...DEFAULT_PRODUCTIVITY_GOALS,
+      ...goals,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    list.push(created);
+    storageEngine.setCollection<ProductivityGoals>('productivity_goals', list);
+    return created;
+  }
+}
+
 // Singleton instances for clean injection across Presentation layer
 export const taskRepo = new TaskRepository();
 export const scheduleRepo = new ScheduleRepository();
@@ -645,3 +689,4 @@ export const focusRepo = new FocusRepository();
 export const notificationRepo = new NotificationRepository();
 export const dailyReviewRepo = new DailyReviewRepository();
 export const userRepo = new UserRepository();
+export const productivityGoalRepo = new ProductivityGoalRepository();

@@ -221,16 +221,19 @@ export function expandSchedulesForDate(
 
 /**
  * Generates the full month grid days (including leading/trailing days from adjacent months).
- * Always starts on Monday (ISO-8601).
+ * Supports starting on Monday (default) or Sunday.
  */
-export function getMonthMatrix(year: number, month: number): MonthGridDay[][] {
+export function getMonthMatrix(
+  year: number,
+  month: number,
+  startOfWeek: 'monday' | 'sunday' = 'monday'
+): MonthGridDay[][] {
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
 
-  // Monday = 1, Sunday = 7
-  let startingDayOfWeek = firstDayOfMonth.getDay();
-  // Transform JS 0 (Sun) -> 7, so Monday is 1, Sunday is 7
-  startingDayOfWeek = startingDayOfWeek === 0 ? 7 : startingDayOfWeek;
+  const jsDay = firstDayOfMonth.getDay(); // 0 = Sun, 1 = Mon, ... 6 = Sat
+  const leadingDaysCount =
+    startOfWeek === 'sunday' ? jsDay : jsDay === 0 ? 6 : jsDay - 1;
 
   const totalCurrentMonthDays = lastDayOfMonth.getDate();
   const todayStr = getTodayDateString();
@@ -239,7 +242,6 @@ export function getMonthMatrix(year: number, month: number): MonthGridDay[][] {
 
   // 1. Previous month trailing days
   const prevMonthLastDay = new Date(year, month, 0).getDate();
-  const leadingDaysCount = startingDayOfWeek - 1;
   for (let i = leadingDaysCount - 1; i >= 0; i--) {
     const d = prevMonthLastDay - i;
     const date = new Date(year, month - 1, d);

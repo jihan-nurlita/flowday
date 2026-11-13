@@ -32,7 +32,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   initialDueDate,
   onSuccess,
 }) => {
-  const { categories, createTask, updateTask } = useFlow();
+  const { user, categories, createTask, updateTask } = useFlow();
 
   // Form states
   const [title, setTitle] = useState('');
@@ -86,11 +86,15 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           setCustomReminderDateTime('');
         }
       } else {
-        // Create new task defaults
+        // Create new task defaults (honoring user Productivity Preferences)
+        const prefCatId = user?.preferences?.defaultTaskCategory;
+        const matchedPrefCat = prefCatId && categories.some((c) => c.id === prefCatId);
+        const prefPriority = user?.preferences?.defaultTaskPriority || 'medium';
+
         setTitle('');
         setDescription('');
-        setCategoryId(categories[0]?.id ?? 'cat_1');
-        setPriority('medium');
+        setCategoryId(matchedPrefCat ? prefCatId : (categories[0]?.id ?? 'cat_1'));
+        setPriority(prefPriority);
         setStatus('todo');
         setStartDate('');
         setHasDeadline(true);
@@ -106,7 +110,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setNewSubtaskTitle('');
       setError(null);
     }
-  }, [isOpen, taskToEdit, categories]);
+  }, [isOpen, taskToEdit, categories, initialDueDate, user?.preferences?.defaultTaskCategory, user?.preferences?.defaultTaskPriority]);
 
   if (!isOpen) return null;
 

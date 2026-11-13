@@ -26,6 +26,7 @@ export type CollectionName =
   | 'focus_sessions'
   | 'daily_reviews'
   | 'notifications'
+  | 'productivity_goals'
   | 'activities';
 
 const PREFIX = 'flowday_db_';
@@ -206,6 +207,7 @@ class StorageEngine {
         focus_sessions: this.getCollection('focus_sessions'),
         daily_reviews: this.getCollection('daily_reviews'),
         notifications: this.getCollection('notifications'),
+        productivity_goals: this.getCollection('productivity_goals'),
       },
     };
     return JSON.stringify(backup, null, 2);
@@ -224,6 +226,7 @@ class StorageEngine {
         'focus_sessions',
         'daily_reviews',
         'notifications',
+        'productivity_goals',
       ];
       collections.forEach((col) => {
         if (Array.isArray(parsed.data[col])) {
@@ -237,6 +240,69 @@ class StorageEngine {
     }
   }
 
+  /**
+   * Export personal workspace data strictly scoped to the specified user (without credentials).
+   */
+  public exportPersonalData(user: User | null): string {
+    const uid = user?.uid || DEFAULT_USER.uid;
+    const filterByUser = <T extends { userId?: string }>(items: T[]): T[] =>
+      items.filter((item) => !item.userId || item.userId === uid);
+
+    const payload = {
+      app: 'FlowDay',
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      scope: { uid },
+      profile: user
+        ? {
+            uid: user.uid,
+            fullName: user.fullName,
+            email: user.email,
+            photoUrl: user.photoUrl || '',
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          }
+        : null,
+      preferences: user?.preferences || null,
+      data: {
+        categories: filterByUser(this.getCollection<Category>('categories')),
+        tasks: filterByUser(this.getCollection<Task>('tasks')),
+        schedules: filterByUser(this.getCollection<Schedule>('schedules')),
+        notes: filterByUser(this.getCollection<Note>('notes')),
+        focus_sessions: filterByUser(this.getCollection<FocusSession>('focus_sessions')),
+        daily_reviews: filterByUser(this.getCollection<DailyReview>('daily_reviews')),
+        notifications: filterByUser(this.getCollection<AppNotification>('notifications')),
+        productivity_goals: filterByUser(this.getCollection<any>('productivity_goals')),
+      },
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  /**
+   * Clears ONLY ephemeral UI cache keys (`flowday_cache_*`).
+   * Never touches primary database (`flowday_db_*`), preferences (`flowday_prefs_*`),
+   * or pending sync flags (`flowday_prefs_pending_*`).
+   */
+  public clearLocalCache(): { clearedKeys: number } {
+    let clearedKeys = 0;
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('flowday_cache_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => {
+        localStorage.removeItem(key);
+        clearedKeys += 1;
+      });
+    } catch (e) {
+      console.error('Failed to clear temporary local cache:', e);
+    }
+    return { clearedKeys };
+  }
+
   public clearAllData(): void {
     const collections: CollectionName[] = [
       'users',
@@ -247,6 +313,7 @@ class StorageEngine {
       'focus_sessions',
       'daily_reviews',
       'notifications',
+      'productivity_goals',
     ];
     collections.forEach((col) => {
       localStorage.removeItem(this.getKey(col));

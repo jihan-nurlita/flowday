@@ -13,28 +13,28 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenNotifications,
   onOpenProfile,
 }) => {
-  const { activeTab, syncState, triggerManualSync, openQuickCapture, timerState, notifications } = useFlow();
+  const { activeTab, syncState, triggerManualSync, openQuickCapture, timerState, notifications, t, language } = useFlow();
 
   const getPageTitle = () => {
     switch (activeTab) {
       case 'dashboard':
-        return 'Dashboard';
+        return t.pageTitles.dashboard;
       case 'calendar':
-        return 'Calendar & Agenda';
+        return t.pageTitles.calendar;
       case 'tasks':
-        return 'My Tasks';
+        return t.pageTitles.tasks;
       case 'focus':
-        return 'Focus & Pomodoro';
+        return t.pageTitles.focus;
       case 'notes':
-        return 'My Notes';
+        return t.pageTitles.notes;
       case 'analytics':
-        return 'Statistics & Review';
+        return t.pageTitles.analytics;
       case 'notifications':
-        return 'Notifications';
+        return t.pageTitles.notifications;
       case 'settings':
-        return 'Settings';
+        return t.pageTitles.settings;
       case 'profile':
-        return 'My Profile';
+        return t.pageTitles.profile;
       default:
         return 'FlowDay';
     }
@@ -54,6 +54,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {getPageTitle()}
         </span>
       </div>
+
+      
 
       {/* Zone 3: Actions, Quick Focus Indicator & Secondary Nav triggers */}
       <div className="flex items-center gap-2 shrink-0">
@@ -94,6 +96,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             size="sm"
           />
         </div>
+
+        {/* Primary Action Button (Hidden on Dashboard page per user request) */}
+        {activeTab !== 'dashboard' && (
+          <PrimaryButton
+            icon={Plus}
+            onClick={() => openQuickCapture('task')}
+            size="sm"
+          >
+            {t.common.newItem}
+          </PrimaryButton>
+        )}
       </div>
     </header>
   );

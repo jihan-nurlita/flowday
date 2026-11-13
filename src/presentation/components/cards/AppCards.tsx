@@ -546,24 +546,24 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="text-xs sm:text-sm font-bold text-[#34313D] truncate max-w-xs sm:max-w-md">
+            <h3 className="text-xs sm:text-sm font-bold text-[#292536] truncate max-w-xs sm:max-w-md">
               {note.title}
             </h3>
             {note.isPinned && !isTrashView && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#A995D8]/20 text-[#A995D8]">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#A995D8]/25 text-[#593F94]">
                 <Pin className="w-2.5 h-2.5 fill-current" />
                 Pinned
               </span>
             )}
             {note.isFavorite && !isTrashView && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#F1B8CC]/30 text-[#D96B91]">
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#F1B8CC]/35 text-[#A63A60]">
                 <Star className="w-2.5 h-2.5 fill-current" />
               </span>
             )}
-            <CategoryBadge categoryId={note.categoryId} />
+            <CategoryBadge categoryId={note.categoryId} className="!text-[#4E485B]" />
           </div>
 
-          <p className="text-xs text-[#34313D]/80 line-clamp-1 leading-relaxed">
+          <p className="text-xs text-[#393344] line-clamp-1 leading-relaxed">
             {note.content}
           </p>
 
@@ -573,20 +573,20 @@ export const NoteCard: React.FC<NoteCardProps> = ({
               {note.tags.slice(0, 3).map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-medium text-[#898493]"
+                  className="px-1.5 py-0.5 rounded-md bg-black/8 text-[10px] font-medium text-[#4E485B]"
                 >
                   #{tag}
                 </span>
               ))}
               {note.tags.length > 3 && (
-                <span className="text-[10px] text-[#898493]">+{note.tags.length - 3}</span>
+                <span className="text-[10px] text-[#5D5868]">+{note.tags.length - 3}</span>
               )}
             </div>
           )}
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-1 shrink-0 text-[#898493]">
+        <div className="flex items-center gap-1 shrink-0 text-[#5D5868]">
           <span className="text-[11px] font-mono mr-2 hidden sm:inline">
             {formatReadableDate(note.updatedAt || note.createdAt)}
           </span>
@@ -602,8 +602,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                   }}
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                     note.isFavorite
-                      ? 'text-[#F1B8CC]'
-                      : 'text-[#898493] opacity-0 group-hover:opacity-100 hover:text-[#D96B91]'
+                      ? 'text-[#D96B91]'
+                      : 'text-[#5D5868] opacity-0 group-hover:opacity-100 hover:text-[#A63A60]'
                   }`}
                   title={note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                 >
@@ -620,8 +620,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                   }}
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                     note.isPinned
-                      ? 'text-[#A995D8]'
-                      : 'text-[#898493] opacity-0 group-hover:opacity-100 hover:text-[#34313D]'
+                      ? 'text-[#593F94]'
+                      : 'text-[#5D5868] opacity-0 group-hover:opacity-100 hover:text-[#292536]'
                   }`}
                   title={note.isPinned ? 'Unpin note' : 'Pin note'}
                 >
@@ -636,7 +636,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     e.stopPropagation();
                     onDelete(note.id);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 text-[#898493] hover:text-[#E07A5F] transition-all rounded-lg hover:bg-black/5 cursor-pointer"
+                  className="opacity-0 group-hover:opacity-100 p-1.5 text-[#5D5868] hover:text-[#E07A5F] transition-all rounded-lg hover:bg-black/5 cursor-pointer"
                   title="Move to trash"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -652,7 +652,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     e.stopPropagation();
                     onRestore(note.id);
                   }}
-                  className="p-1.5 text-[#34313D] hover:text-[#B5DCCB] transition-colors rounded-lg hover:bg-black/5 cursor-pointer flex items-center gap-1 text-xs font-semibold"
+                  className="p-1.5 text-[#2D6A4F] hover:text-[#1F513B] transition-colors rounded-lg hover:bg-black/5 cursor-pointer flex items-center gap-1 text-xs font-semibold"
                   title="Restore note"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -691,7 +691,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         {/* Top Header */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base font-bold text-[#34313D] line-clamp-1 leading-snug">
+            <h3 className="text-sm sm:text-base font-bold text-[#292536] line-clamp-1 leading-snug">
               {note.title}
             </h3>
           </div>
@@ -708,8 +708,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     }}
                     className={`p-1 rounded-lg transition-colors cursor-pointer ${
                       note.isFavorite
-                        ? 'text-[#F1B8CC]'
-                        : 'text-[#898493] opacity-0 group-hover:opacity-100 hover:text-[#D96B91]'
+                        ? 'text-[#D96B91]'
+                        : 'text-[#5D5868] opacity-0 group-hover:opacity-100 hover:text-[#A63A60]'
                     }`}
                     title={note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                     aria-label={note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -727,8 +727,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     }}
                     className={`p-1 rounded-lg transition-colors cursor-pointer ${
                       note.isPinned
-                        ? 'text-[#A995D8]'
-                        : 'text-[#898493] opacity-0 group-hover:opacity-100 hover:text-[#34313D]'
+                        ? 'text-[#593F94]'
+                        : 'text-[#5D5868] opacity-0 group-hover:opacity-100 hover:text-[#292536]'
                     }`}
                     title={note.isPinned ? 'Unpin note' : 'Pin note'}
                     aria-label={note.isPinned ? 'Unpin note' : 'Pin note'}
@@ -742,7 +742,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
 
         {/* Content excerpt */}
-        <p className="text-xs text-[#34313D]/90 whitespace-pre-wrap line-clamp-5 leading-relaxed font-normal">
+        <p className="text-xs text-[#393344] whitespace-pre-wrap line-clamp-5 leading-relaxed font-normal">
           {note.content}
         </p>
 
@@ -752,22 +752,22 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             {note.tags.slice(0, 3).map((tag, idx) => (
               <span
                 key={idx}
-                className="px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[10px] font-medium text-[#686371]"
+                className="px-2 py-0.5 rounded-full bg-black/8 text-[10px] font-medium text-[#4E485B]"
               >
                 #{tag}
               </span>
             ))}
             {note.tags.length > 3 && (
-              <span className="text-[10px] text-[#898493]">+{note.tags.length - 3}</span>
+              <span className="text-[10px] text-[#5D5868]">+{note.tags.length - 3}</span>
             )}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-black/5 text-[11px] text-[#34313D]/70">
+      <div className="flex items-center justify-between pt-3 mt-3 border-t border-black/10 text-[11px] text-[#5D5868]">
         <div className="flex items-center gap-1.5 min-w-0">
-          <CategoryBadge categoryId={note.categoryId} />
+          <CategoryBadge categoryId={note.categoryId} className="!text-[#4E485B]" />
           <span>·</span>
           <span className="font-mono text-[10px]">
             {formatReadableDate(note.updatedAt || note.createdAt)}
@@ -783,7 +783,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                   e.stopPropagation();
                   onDelete(note.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-[#898493] hover:text-[#E07A5F] transition-opacity rounded-md cursor-pointer"
+                className="opacity-0 group-hover:opacity-100 p-1 text-[#5D5868] hover:text-[#E07A5F] transition-opacity rounded-md cursor-pointer"
                 title="Move to trash"
                 aria-label="Move to trash"
               >

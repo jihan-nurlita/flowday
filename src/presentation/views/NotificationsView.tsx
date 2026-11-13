@@ -42,6 +42,8 @@ export const NotificationsView: React.FC = () => {
     globalScheduleModal,
     setActiveTab,
     user,
+    t,
+    language,
   } = useFlow();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'task' | 'schedule' | 'focus' | 'system'>('all');
@@ -179,11 +181,11 @@ export const NotificationsView: React.FC = () => {
   };
 
   const filterTabs = [
-    { id: 'all', label: 'All', count: notifications.length },
-    { id: 'unread', label: 'Unread', count: unreadNotificationsCount },
-    { id: 'task', label: 'Tasks', count: notifications.filter((n) => n.type === 'task').length },
-    { id: 'schedule', label: 'Schedule', count: notifications.filter((n) => n.type === 'schedule').length },
-    { id: 'focus', label: 'Focus', count: notifications.filter((n) => n.type === 'focus').length },
+    { id: 'all', label: t.notifications.all, count: notifications.length },
+    { id: 'unread', label: t.notifications.unread, count: unreadNotificationsCount },
+    { id: 'task', label: t.nav.tasks, count: notifications.filter((n) => n.type === 'task').length },
+    { id: 'schedule', label: t.nav.calendar, count: notifications.filter((n) => n.type === 'schedule').length },
+    { id: 'focus', label: t.nav.focus, count: notifications.filter((n) => n.type === 'focus').length },
     { id: 'system', label: 'System', count: notifications.filter((n) => n.type === 'system' || n.type === 'review').length },
   ] as const;
 
@@ -194,16 +196,16 @@ export const NotificationsView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-              Notification Center
+              {t.notifications.title}
             </h2>
             {unreadNotificationsCount > 0 && (
               <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-[#A995D8] text-white">
-                {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount} unread
+                {unreadNotificationsCount > 99 ? '99+' : unreadNotificationsCount} {t.notifications.unread.toLowerCase()}
               </span>
             )}
           </div>
           <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5">
-            Stay updated with your daily planner, tasks, schedules, and flow.
+            {t.notifications.subtitle}
           </p>
         </div>
 
@@ -213,10 +215,10 @@ export const NotificationsView: React.FC = () => {
             <button
               onClick={() => markAllNotificationsRead()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#EEEAF2] dark:border-[#2D2838] bg-white dark:bg-[#201D27] text-xs font-semibold text-[#898493] hover:text-[#A995D8] hover:border-[#A995D8]/50 shadow-xs transition-colors cursor-pointer"
-              title="Mark all notifications as read"
+              title={t.notifications.markAllRead}
             >
               <CheckCheck className="w-3.5 h-3.5" />
-              <span>Mark all read</span>
+              <span>{t.notifications.markAllRead}</span>
             </button>
           )}
 
@@ -224,10 +226,10 @@ export const NotificationsView: React.FC = () => {
             <button
               onClick={() => setIsClearAllDialogOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#EEEAF2] dark:border-[#2D2838] bg-white dark:bg-[#201D27] text-xs font-semibold text-[#898493] hover:text-[#E07A5F] hover:border-[#E07A5F]/40 shadow-xs transition-colors cursor-pointer"
-              title="Clear all notifications"
+              title={t.notifications.clearAll}
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear all</span>
+              <span>{t.notifications.clearAll}</span>
             </button>
           )}
 
@@ -356,7 +358,7 @@ export const NotificationsView: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#A995D8]">
-                  Today
+                  {t.notifications.today}
                 </span>
                 <span className="text-[11px] font-mono text-[#898493]">
                   {groupedNotifications.today.length} item{groupedNotifications.today.length === 1 ? '' : 's'}
@@ -367,6 +369,7 @@ export const NotificationsView: React.FC = () => {
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
+                    language={language}
                     typeMeta={getTypeMeta(notif.type)}
                     onOpenSource={handleOpenSource}
                     onToggleRead={() =>
@@ -386,7 +389,7 @@ export const NotificationsView: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#898493]">
-                  Yesterday
+                  {t.notifications.yesterday}
                 </span>
                 <span className="text-[11px] font-mono text-[#898493]">
                   {groupedNotifications.yesterday.length} item{groupedNotifications.yesterday.length === 1 ? '' : 's'}
@@ -397,6 +400,7 @@ export const NotificationsView: React.FC = () => {
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
+                    language={language}
                     typeMeta={getTypeMeta(notif.type)}
                     onOpenSource={handleOpenSource}
                     onToggleRead={() =>
@@ -416,7 +420,7 @@ export const NotificationsView: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#898493]">
-                  Earlier
+                  {t.notifications.earlier}
                 </span>
                 <span className="text-[11px] font-mono text-[#898493]">
                   {groupedNotifications.earlier.length} item{groupedNotifications.earlier.length === 1 ? '' : 's'}
@@ -427,6 +431,7 @@ export const NotificationsView: React.FC = () => {
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
+                    language={language}
                     typeMeta={getTypeMeta(notif.type)}
                     onOpenSource={handleOpenSource}
                     onToggleRead={() =>
@@ -462,6 +467,7 @@ export const NotificationsView: React.FC = () => {
 
 interface NotificationItemProps {
   notification: AppNotification;
+  language: 'en' | 'id';
   typeMeta: {
     icon: React.ElementType;
     bg: string;
@@ -475,6 +481,7 @@ interface NotificationItemProps {
 
 const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
+  language,
   typeMeta,
   onOpenSource,
   onToggleRead,
@@ -521,7 +528,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
             </div>
 
             <span className="text-[10px] sm:text-xs font-mono text-[#898493] shrink-0">
-              {formatReadableDate(notification.createdAt)}
+              {formatReadableDate(notification.createdAt, language)}
             </span>
           </div>
 

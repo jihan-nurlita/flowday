@@ -74,25 +74,25 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
       >
         <div>
           {/* Top Header */}
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5 mb-4">
+          <div className="flex items-start justify-between gap-3 pb-3 border-b border-black/10 mb-4">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <CategoryBadge categoryId={note.categoryId} />
+                <CategoryBadge categoryId={note.categoryId} className="!text-[#4E485B]" />
                 {note.isPinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#A995D8]/20 text-[#A995D8]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#A995D8]/25 text-[#593F94]">
                     <Pin className="w-2.5 h-2.5 fill-current" />
                     Pinned
                   </span>
                 )}
                 {note.isFavorite && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F1B8CC]/30 text-[#D96B91]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F1B8CC]/35 text-[#A63A60]">
                     <Star className="w-2.5 h-2.5 fill-current" />
                     Favorite
                   </span>
                 )}
               </div>
 
-              <h2 className="text-lg sm:text-xl font-bold text-[#34313D] dark:text-[#F4F2F7] leading-snug break-words">
+              <h2 className="text-lg sm:text-xl font-bold text-[#292536] leading-snug break-words">
                 {note.title}
               </h2>
             </div>
@@ -103,7 +103,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 type="button"
                 onClick={() => toggleNotePin(note.id)}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  note.isPinned ? 'text-[#A995D8]' : 'text-[#898493] hover:text-[#34313D]'
+                  note.isPinned ? 'text-[#593F94]' : 'text-[#5D5868] hover:text-[#292536]'
                 }`}
                 title={note.isPinned ? 'Unpin note' : 'Pin note'}
               >
@@ -115,7 +115,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 type="button"
                 onClick={() => toggleNoteFavorite(note.id)}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  note.isFavorite ? 'text-[#F1B8CC]' : 'text-[#898493] hover:text-[#D96B91]'
+                  note.isFavorite ? 'text-[#D96B91]' : 'text-[#5D5868] hover:text-[#A63A60]'
                 }`}
                 title={note.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               >
@@ -125,7 +125,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-[#898493] hover:text-[#34313D] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#5D5868] hover:text-[#292536] transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
@@ -136,11 +136,11 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
           {/* Tags */}
           {note.tags && note.tags.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap mb-4">
-              <Tag className="w-3.5 h-3.5 text-[#898493] shrink-0" />
+              <Tag className="w-3.5 h-3.5 text-[#5D5868] shrink-0" />
               {note.tags.map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-[11px] font-medium text-[#686371]"
+                  className="px-2 py-0.5 rounded-full bg-black/8 text-[11px] font-medium text-[#4E485B]"
                 >
                   #{tag}
                 </span>
@@ -158,9 +158,9 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
         </div>
 
         {/* Footer Meta & Actions */}
-        <div className="pt-4 border-t border-black/5 dark:border-white/5 mt-4 space-y-3">
+        <div className="pt-4 border-t border-black/10 mt-4 space-y-3">
           {/* Timestamps */}
-          <div className="flex items-center justify-between text-[11px] text-[#898493] dark:text-[#9E99A8] font-mono">
+          <div className="flex items-center justify-between text-[11px] text-[#5D5868] font-mono">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3 text-[#A9C8E8]" />
               <span>Created {formatFullDate(note.createdAt)}</span>
@@ -178,7 +178,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>Move this note to trash?</span>
               </div>
-              <p className="text-[11px] text-[#898493]">
+              <p className="text-[11px] text-[#5D5868]">
                 You can restore it later from the Trash tab anytime before permanent deletion.
               </p>
               <div className="flex items-center justify-end gap-2 pt-1">
@@ -186,7 +186,7 @@ export const NoteDetailModal: React.FC<NoteDetailModalProps> = ({
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
                   disabled={isDeleting}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white text-[#34313D] cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white text-[#292536] cursor-pointer"
                 >
                   Cancel
                 </button>

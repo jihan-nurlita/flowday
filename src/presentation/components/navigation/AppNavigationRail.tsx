@@ -25,15 +25,15 @@ export const AppNavigationRail: React.FC<AppNavigationRailProps> = ({
   onOpenNotifications,
   onOpenProfile,
 }) => {
-  const { activeTab, setActiveTab, openQuickCapture, notifications } = useFlow();
+  const { activeTab, setActiveTab, openQuickCapture, notifications, t } = useFlow();
 
   const navItems: { id: NavigationTab; label: string; icon: React.ElementType }[] = [
-    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-    { id: 'calendar', label: 'Calendar', icon: Calendar },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-    { id: 'focus', label: 'Focus', icon: Timer },
-    { id: 'notes', label: 'Notes', icon: StickyNote },
-    { id: 'analytics', label: 'Stats', icon: BarChart3 },
+    { id: 'dashboard', label: t.nav.home, icon: LayoutDashboard },
+    { id: 'calendar', label: t.nav.calendar, icon: Calendar },
+    { id: 'tasks', label: t.nav.tasks, icon: CheckSquare },
+    { id: 'focus', label: t.nav.focus, icon: Timer },
+    { id: 'notes', label: t.nav.notes, icon: StickyNote },
+    { id: 'analytics', label: t.nav.statsShort, icon: BarChart3 },
   ];
 
   const unreadNotifs = notifications.filter((n) => !n.isRead).length;
@@ -53,8 +53,8 @@ export const AppNavigationRail: React.FC<AppNavigationRailProps> = ({
         <button
           onClick={() => openQuickCapture('task')}
           className="w-10 h-10 rounded-xl bg-[#A995D8] hover:bg-[#9680C9] active:scale-95 text-white flex items-center justify-center shadow-xs cursor-pointer transition-all"
-          title="Quick Capture"
-          aria-label="Quick Capture"
+          title={t.common.quickCapture}
+          aria-label={t.common.quickCapture}
         >
           <Plus className="w-5 h-5" />
         </button>
@@ -89,14 +89,14 @@ export const AppNavigationRail: React.FC<AppNavigationRailProps> = ({
         <div className="relative">
           <IconButton
             icon={Bell}
-            label="Notifications"
+            label={t.nav.notifications}
             onClick={onOpenNotifications}
             size="sm"
           />
           {unreadNotifs > 0 && (
             <span
               className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#A995D8] text-[9px] font-mono font-bold text-white flex items-center justify-center shadow-xs pointer-events-none"
-              title={`${unreadNotifs} unread notifications`}
+              title={`${unreadNotifs}`}
             >
               {unreadNotifs > 99 ? '99+' : unreadNotifs}
             </span>
@@ -105,14 +105,14 @@ export const AppNavigationRail: React.FC<AppNavigationRailProps> = ({
 
         <IconButton
           icon={User}
-          label="Profile"
+          label={t.nav.profile}
           onClick={onOpenProfile}
           size="sm"
         />
 
         <IconButton
           icon={Settings}
-          label="Settings"
+          label={t.nav.settings}
           variant={activeTab === 'settings' ? 'filled' : 'ghost'}
           onClick={() => setActiveTab('settings')}
           size="sm"

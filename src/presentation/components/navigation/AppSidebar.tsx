@@ -25,15 +25,15 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenNotifications,
   onOpenProfile,
 }) => {
-  const { activeTab, setActiveTab, stats, openQuickCapture, notifications, user } = useFlow();
+  const { activeTab, setActiveTab, stats, openQuickCapture, notifications, t } = useFlow();
 
   const primaryNavItems: { id: NavigationTab; label: string; icon: React.ElementType; badge?: number }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'calendar', label: 'Calendar', icon: Calendar, badge: stats.upcomingSchedulesCount },
-    { id: 'tasks', label: 'My Tasks', icon: CheckSquare, badge: stats.urgentImportantCount },
-    { id: 'focus', label: 'Focus', icon: Timer },
-    { id: 'notes', label: 'My Notes', icon: StickyNote, badge: stats.activeNotesCount },
-    { id: 'analytics', label: 'Statistics', icon: BarChart3 },
+    { id: 'dashboard', label: t.nav.dashboard, icon: LayoutDashboard },
+    { id: 'calendar', label: t.nav.calendar, icon: Calendar, badge: stats.upcomingSchedulesCount },
+    { id: 'tasks', label: t.nav.tasks, icon: CheckSquare, badge: stats.urgentImportantCount },
+    { id: 'focus', label: t.nav.focus, icon: Timer },
+    { id: 'notes', label: t.nav.notes, icon: StickyNote, badge: stats.activeNotesCount },
+    { id: 'analytics', label: t.nav.statistics, icon: BarChart3 },
   ];
 
   const unreadNotifs = notifications.filter((n) => !n.isRead).length;
@@ -66,13 +66,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
           fullWidth
           size="md"
         >
-          Quick Capture
+          {t.common.quickCapture}
         </PrimaryButton>
 
         {/* Primary Navigation */}
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[#898493] dark:text-[#9E99A8] px-3 mb-2">
-            Main Menu
+            {t.nav.mainMenu}
           </p>
           <nav className="flex flex-col gap-1" aria-label="Main Navigation">
             {primaryNavItems.map((item) => {
@@ -108,7 +108,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* Secondary Navigation */}
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-[#898493] dark:text-[#9E99A8] px-3 mb-2">
-            Account & System
+            {t.nav.accountSystem}
           </p>
           <div className="flex flex-col gap-1">
             <button
@@ -121,7 +121,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             >
               <div className="flex items-center gap-3">
                 <Bell className={`w-4 h-4 shrink-0 ${activeTab === 'notifications' ? 'text-[#A995D8]' : ''}`} />
-                <span>Notifications</span>
+                <span>{t.nav.notifications}</span>
               </div>
               {unreadNotifs > 0 && (
                 <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-[#A995D8] text-white shadow-xs">
@@ -135,7 +135,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               className="flex items-center gap-3 py-2.5 px-3 rounded-xl text-xs font-medium text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7] hover:bg-[#FAF9FC] dark:hover:bg-[#252230] transition-colors cursor-pointer"
             >
               <User className="w-4 h-4 shrink-0" />
-              <span>My Profile</span>
+              <span>{t.nav.profile}</span>
             </button>
 
             <button
@@ -147,7 +147,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               }`}
             >
               <Settings className="w-4 h-4 shrink-0" />
-              <span>Settings</span>
+              <span>{t.nav.settings}</span>
             </button>
           </div>
         </div>
@@ -157,7 +157,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
       <div className="pt-4 border-t border-[#EEEAF2] dark:border-[#2D2838]">
         <div className="p-3 bg-[#FAF9FC] dark:bg-[#1A1823] rounded-xl border border-[#EEEAF2] dark:border-[#2D2838]">
           <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-[#898493] dark:text-[#9E99A8] font-medium">Daily Goal</span>
+            <span className="text-[#898493] dark:text-[#9E99A8] font-medium">{t.common.dailyGoal}</span>
             <span className="font-mono font-bold text-[#A995D8]">{stats.todayCompletionRate}%</span>
           </div>
           <div className="w-full bg-[#EEEAF2] dark:bg-[#2D2838] h-1.5 rounded-full overflow-hidden">
@@ -167,7 +167,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
             />
           </div>
           <p className="text-[11px] text-[#898493] dark:text-[#9E99A8] mt-2">
-            {stats.todayTasksCompleted} of {stats.todayTasksTotal} tasks done
+            {stats.todayTasksCompleted} {t.common.tasksDoneOf} {stats.todayTasksTotal}
           </p>
         </div>
       </div>

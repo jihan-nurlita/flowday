@@ -6,6 +6,7 @@ import { FocusSession } from '../entities/focus_session';
 import { AppNotification } from '../entities/notification';
 import { DailyReview } from '../entities/daily_review';
 import { User } from '../entities/user';
+import { ProductivityGoals } from '../entities/productivity_goal';
 
 export interface ITaskRepository {
   getAll(userId: string): Promise<Task[]>;
@@ -75,4 +76,12 @@ export interface IUserRepository {
   getUser(uid: string): Promise<User | null>;
   saveUser(user: User): Promise<User>;
   updatePreferences(uid: string, preferences: Partial<User['preferences']>): Promise<User>;
+}
+
+export interface IProductivityGoalRepository {
+  getByUserId(userId: string): Promise<ProductivityGoals | null>;
+  saveGoals(
+    userId: string,
+    goals: Partial<Omit<ProductivityGoals, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
+  ): Promise<ProductivityGoals>;
 }

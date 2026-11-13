@@ -216,8 +216,8 @@ export const CalendarDayTimeline: React.FC<CalendarDayTimelineProps> = ({
               className="group flex items-start gap-4 py-2 border-b border-[#FAF9FC] dark:border-[#1E1B28] hover:bg-[#FAF9FC]/60 dark:hover:bg-[#1A1823]/60 transition-colors rounded-xl px-2.5"
             >
               {/* Hour Label */}
-              <div className="w-14 shrink-0 text-xs font-mono font-medium text-[#898493] dark:text-[#9E99A8] pt-2">
-                {hourStr}
+              <div className="w-16 shrink-0 text-xs font-mono font-medium text-[#898493] dark:text-[#9E99A8] pt-2">
+                {formatTime(hourStr)}
               </div>
 
               {/* Event slot */}

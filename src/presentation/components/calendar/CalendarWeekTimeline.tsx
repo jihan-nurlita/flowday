@@ -6,12 +6,16 @@ import { getWeekDays, formatTime, getTodayDateString } from '../../../core/utils
 import { expandSchedulesForDate, timeToMinutes, formatDateToYMD } from '../../../core/utils/calendar';
 import { Clock, Calendar, CheckCircle2, Circle, Plus } from 'lucide-react';
 
+import { StartOfWeekOption, AppLanguageCode } from '../../../domain/entities/user';
+
 interface CalendarWeekTimelineProps {
   currentWeekAnchor: Date;
   selectedDate: string;
   schedules: Schedule[];
   tasks: Task[];
   categories: Category[];
+  startOfWeek?: StartOfWeekOption;
+  language?: AppLanguageCode;
   onSelectDate: (dateStr: string) => void;
   onSelectSchedule: (occurrence: ScheduleOccurrence) => void;
   onSelectTask: (task: Task) => void;
@@ -24,12 +28,14 @@ export const CalendarWeekTimeline: React.FC<CalendarWeekTimelineProps> = ({
   schedules,
   tasks,
   categories,
+  startOfWeek = 'monday',
+  language = 'en',
   onSelectDate,
   onSelectSchedule,
   onSelectTask,
   onAddScheduleAt,
 }) => {
-  const weekDays = getWeekDays(currentWeekAnchor);
+  const weekDays = getWeekDays(currentWeekAnchor, startOfWeek);
   const todayStr = getTodayDateString();
 
   const getCategoryColor = (categoryId: string) => {
@@ -76,7 +82,7 @@ export const CalendarWeekTimeline: React.FC<CalendarWeekTimelineProps> = ({
               }`}
             >
               <div className="text-[10px] uppercase font-bold text-[#898493] dark:text-[#9E99A8]">
-                {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                {d.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { weekday: 'short' })}
               </div>
               <div
                 className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-mono font-bold mt-0.5 ${
@@ -163,15 +169,18 @@ export const CalendarWeekTimeline: React.FC<CalendarWeekTimelineProps> = ({
         >
           {/* Time Labels Column */}
           <div className="border-r border-[#EEEAF2] dark:border-[#2D2838] bg-[#FAF9FC]/40 dark:bg-[#1A1823]/40 select-none">
-            {hours.map((hour) => (
-              <div
-                key={hour}
-                style={{ height: `${hourHeight}px` }}
-                className="text-right pr-2 pt-1 border-b border-[#EEEAF2]/60 dark:border-[#2D2838]/60 text-[11px] font-mono text-[#898493] dark:text-[#9E99A8]"
-              >
-                {String(hour).padStart(2, '0')}:00
-              </div>
-            ))}
+            {hours.map((hour) => {
+              const rawTime = `${String(hour).padStart(2, '0')}:00`;
+              return (
+                <div
+                  key={hour}
+                  style={{ height: `${hourHeight}px` }}
+                  className="text-right pr-2 pt-1 border-b border-[#EEEAF2]/60 dark:border-[#2D2838]/60 text-[11px] font-mono text-[#898493] dark:text-[#9E99A8]"
+                >
+                  {formatTime(rawTime)}
+                </div>
+              );
+            })}
           </div>
 
           {/* 7 Day Columns */}

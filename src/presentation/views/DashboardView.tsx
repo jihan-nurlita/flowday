@@ -63,6 +63,8 @@ export const DashboardView: React.FC = () => {
     openNotifications,
     openProfile,
     timerState,
+    t,
+    language,
   } = useFlow();
 
   const [activeDetailNote, setActiveDetailNote] = useState<Note | null>(null);
@@ -76,10 +78,10 @@ export const DashboardView: React.FC = () => {
   const currentHour = new Date().getHours();
   const greetingText =
     currentHour < 12
-      ? 'Good Morning'
+      ? t.dashboard.goodMorning
       : currentHour < 17
-      ? 'Good Afternoon'
-      : 'Good Evening';
+      ? t.dashboard.goodAfternoon
+      : t.dashboard.goodEvening;
 
   const userDisplayName = user?.fullName || user?.name || 'FlowDay Explorer';
   const firstName = userDisplayName.trim().split(' ')[0] || 'Explorer';
@@ -146,11 +148,15 @@ export const DashboardView: React.FC = () => {
       .sort((a, b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt));
   }, [notes]);
 
-  // 6. SVG Ring Progress calculations for Productivity Summary
+  // 6. SVG Ring Progress calculations for Productivity Summary (unified with analytics_service)
+  const summaryDisplayPercent =
+    stats.todayProductivityScore !== null
+      ? stats.todayProductivityScore
+      : stats.todayCompletionRate;
   const ringRadius = 40;
   const ringCircumference = 2 * Math.PI * ringRadius;
   const strokeDashoffset =
-    ringCircumference - (stats.todayCompletionRate / 100) * ringCircumference;
+    ringCircumference - (summaryDisplayPercent / 100) * ringCircumference;
 
   return (
     <div className="space-y-6">
@@ -159,35 +165,13 @@ export const DashboardView: React.FC = () => {
       {/* ============================================================== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 bg-white dark:bg-[#201D27] rounded-3xl border border-[#EEEAF2] dark:border-[#2D2838] shadow-[0_2px_16px_rgba(52,49,61,0.02)]">
         <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
-          {/* Profile Photo / Initials Fallback */}
-          <button
-            onClick={openProfile}
-            className="relative shrink-0 w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#F4F1FA] to-[#FAF9FC] dark:from-[#2C253B] dark:to-[#17151D] border-2 border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#A995D8] transition-all cursor-pointer flex items-center justify-center group"
-            title="Open Profile"
-            aria-label="Open Profile"
-          >
-            {user?.photoUrl ? (
-              <img
-                src={user.photoUrl}
-                alt={userDisplayName}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className="text-base font-bold text-[#A995D8] group-hover:scale-105 transition-transform">
-                {userInitials}
-              </span>
-            )}
-            <span className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-[#B5DCCB] border-2 border-white dark:border-[#201D27]" />
-          </button>
+          
 
           {/* Greeting, User Name, and Today's Local Date */}
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#A995D8]">
-                {formatFullDate(new Date())}
+                {formatFullDate(new Date(), language)}
               </span>
             </div>
 
@@ -195,7 +179,7 @@ export const DashboardView: React.FC = () => {
               {greetingText}, {firstName}!
             </h1>
             <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5 line-clamp-1">
-              Plan your day, prioritize essentials, and find your flow.
+              {t.dashboard.subtitle}
             </p>
           </div>
         </div>
@@ -231,28 +215,7 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* ============================================================== */}
-      {/* MOTIVATIONAL MESSAGE BANNER                                    */}
-      {/* ============================================================== */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#F4F1FA] via-[#FAF9FC] to-[#FDF4F8] dark:from-[#262033] dark:via-[#1D1A25] dark:to-[#2B1D28] border border-[#EEEAF2] dark:border-[#2D2838] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#201D27] border border-[#EEEAF2] dark:border-[#2D2838] flex items-center justify-center text-[#A995D8] shrink-0 shadow-xs">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-[#34313D] dark:text-[#F4F2F7] italic">
-              "{dailyQuote.quote}"
-            </p>
-            <p className="text-[11px] text-[#898493] dark:text-[#9E99A8] mt-0.5">
-              — {dailyQuote.author}
-            </p>
-          </div>
-        </div>
-
-        <span className="hidden md:inline-flex text-[11px] font-semibold text-[#A995D8] bg-white dark:bg-[#201D27] px-3 py-1 rounded-full border border-[#EEEAF2] dark:border-[#2D2838] shrink-0">
-          Daily Inspiration
-        </span>
-      </div>
+      
 
       {/* ============================================================== */}
       {/* 2. DAILY OVERVIEW (4 Metric Cards with Real Computed Values)  */}
@@ -264,7 +227,7 @@ export const DashboardView: React.FC = () => {
           className="p-4 sm:p-5 bg-white dark:bg-[#201D27] rounded-2xl border border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#A995D8]/50 hover:shadow-xs transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-2.5">
-            <span className="text-xs font-semibold">Today's Tasks</span>
+            <span className="text-xs font-semibold">{t.dashboard.todaysTasks}</span>
             <div className="w-8 h-8 rounded-xl bg-[#F4F1FA] dark:bg-[#2C253B] flex items-center justify-center text-[#A995D8] group-hover:scale-105 transition-transform">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -277,7 +240,7 @@ export const DashboardView: React.FC = () => {
               </span>
             </span>
             <span className="text-xs text-[#898493] dark:text-[#9E99A8] font-medium">
-              {stats.todayTasksPending} pending
+              {stats.todayTasksPending} {t.dashboard.pendingLabel}
             </span>
           </div>
           {/* Real progress bar */}
@@ -297,7 +260,7 @@ export const DashboardView: React.FC = () => {
           className="p-4 sm:p-5 bg-white dark:bg-[#201D27] rounded-2xl border border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#A9C8E8]/60 hover:shadow-xs transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-2.5">
-            <span className="text-xs font-semibold">Upcoming Schedule</span>
+            <span className="text-xs font-semibold">{t.dashboard.upcomingSchedule}</span>
             <div className="w-8 h-8 rounded-xl bg-[#EEF5FC] dark:bg-[#1E2C3D] flex items-center justify-center text-[#A9C8E8] group-hover:scale-105 transition-transform">
               <CalendarDays className="w-4 h-4" />
             </div>
@@ -307,14 +270,14 @@ export const DashboardView: React.FC = () => {
               {todaySchedules.length}
             </span>
             <span className="text-xs text-[#898493] dark:text-[#9E99A8] font-medium truncate">
-              events today
+              {t.dashboard.eventsToday}
             </span>
           </div>
           <p className="text-[11px] text-[#898493] dark:text-[#9E99A8] mt-2.5 truncate font-medium flex items-center gap-1">
             <Clock className="w-3 h-3 text-[#A9C8E8] shrink-0" />
             {nextSchedule
-              ? `Next: ${nextSchedule.startTime} (${nextSchedule.title})`
-              : 'No more events scheduled'}
+              ? `${t.dashboard.nextEventPrefix}: ${nextSchedule.startTime} (${nextSchedule.title})`
+              : t.dashboard.noMoreEvents}
           </p>
         </div>
 
@@ -324,7 +287,7 @@ export const DashboardView: React.FC = () => {
           className="p-4 sm:p-5 bg-white dark:bg-[#201D27] rounded-2xl border border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#F1B8CC]/60 hover:shadow-xs transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-2.5">
-            <span className="text-xs font-semibold">Focus Time</span>
+            <span className="text-xs font-semibold">{t.dashboard.focusTime}</span>
             <div className="w-8 h-8 rounded-xl bg-[#FDF2F6] dark:bg-[#331E2A] flex items-center justify-center text-[#F1B8CC] group-hover:scale-105 transition-transform">
               <Flame className="w-4 h-4" />
             </div>
@@ -337,12 +300,12 @@ export const DashboardView: React.FC = () => {
               </span>
             </span>
             <span className="text-xs text-[#898493] dark:text-[#9E99A8] font-medium">
-              logged today
+              {t.dashboard.loggedToday}
             </span>
           </div>
           <p className="text-[11px] text-[#898493] dark:text-[#9E99A8] mt-2.5 font-medium flex items-center gap-1">
             <Timer className="w-3 h-3 text-[#F1B8CC] shrink-0" />
-            {stats.todayFocusSessionsCount} session{stats.todayFocusSessionsCount === 1 ? '' : 's'} completed
+            {stats.todayFocusSessionsCount} {t.dashboard.sessionsCompleted}
           </p>
         </div>
 
@@ -352,7 +315,7 @@ export const DashboardView: React.FC = () => {
           className="p-4 sm:p-5 bg-white dark:bg-[#201D27] rounded-2xl border border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#B5DCCB]/60 hover:shadow-xs transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] mb-2.5">
-            <span className="text-xs font-semibold">Productivity Progress</span>
+            <span className="text-xs font-semibold">{t.dashboard.productivityProgress}</span>
             <div className="w-8 h-8 rounded-xl bg-[#EBF7F2] dark:bg-[#1E3329] flex items-center justify-center text-[#B5DCCB] group-hover:scale-105 transition-transform">
               <Target className="w-4 h-4" />
             </div>
@@ -362,7 +325,7 @@ export const DashboardView: React.FC = () => {
               {stats.todayCompletionRate}%
             </span>
             <span className="text-xs text-[#898493] dark:text-[#9E99A8] font-medium">
-              completion
+              {t.dashboard.completionLabel}
             </span>
           </div>
           <div className="w-full bg-[#EEEAF2] dark:bg-[#2D2838] h-1.5 rounded-full mt-3 overflow-hidden">
@@ -390,11 +353,11 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#E07A5F]" />
                 <h2 className="text-sm sm:text-base font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Priority Tasks · Do First
+                  {t.dashboard.priorityTasksTitle}
                 </h2>
                 {priorityTasks.length > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCF3F0] text-[#E07A5F] dark:bg-[#331C18] dark:text-[#F29479]">
-                    {priorityTasks.length} pending
+                    {priorityTasks.length} {t.dashboard.pendingLabel}
                   </span>
                 )}
               </div>
@@ -406,7 +369,7 @@ export const DashboardView: React.FC = () => {
                   className="text-xs font-semibold text-[#A995D8] hover:text-[#9680C9] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Task</span>
+                  <span>{t.dashboard.addTask}</span>
                 </button>
                 <span className="text-[#898493] text-xs">·</span>
                 <button
@@ -414,7 +377,7 @@ export const DashboardView: React.FC = () => {
                   onClick={() => setActiveTab('tasks')}
                   className="text-xs font-semibold text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <span>View All</span>
+                  <span>{t.dashboard.viewAll}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -423,9 +386,9 @@ export const DashboardView: React.FC = () => {
             {priorityTasks.length === 0 ? (
               <EmptyState
                 icon={CheckSquare}
-                title="No urgent tasks pending"
-                description="Your high-priority Eisenhower matrix is completely clear! Add high-impact tasks to keep momentum."
-                actionLabel="+ Add Priority Task"
+                title={t.dashboard.noUrgentTitle}
+                description={t.dashboard.noUrgentDesc}
+                actionLabel={t.dashboard.addPriorityTask}
                 onAction={() => openQuickCapture('task')}
                 iconColor="#A995D8"
               />
@@ -449,7 +412,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <CalendarDays className="w-4 h-4 text-[#A9C8E8]" />
                 <h2 className="text-sm sm:text-base font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Today's Schedule & Agenda
+                  {t.dashboard.todaysScheduleTitle}
                 </h2>
                 {todaySchedules.length > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EEF5FC] text-[#2B5885] dark:bg-[#1E2C3D] dark:text-[#A9C8E8]">
@@ -465,7 +428,7 @@ export const DashboardView: React.FC = () => {
                   className="text-xs font-semibold text-[#A995D8] hover:text-[#9680C9] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Schedule</span>
+                  <span>{t.dashboard.addSchedule}</span>
                 </button>
                 <span className="text-[#898493] text-xs">·</span>
                 <button
@@ -473,7 +436,7 @@ export const DashboardView: React.FC = () => {
                   onClick={() => setActiveTab('calendar')}
                   className="text-xs font-semibold text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <span>View Calendar</span>
+                  <span>{t.dashboard.viewCalendar}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -482,9 +445,9 @@ export const DashboardView: React.FC = () => {
             {todaySchedules.length === 0 ? (
               <EmptyState
                 icon={Calendar}
-                title="No events scheduled for today"
-                description="Set specific time blocks for deep work, meetings, or personal routines to stay structured."
-                actionLabel="+ Add Time Block"
+                title={t.dashboard.noEventsTitle}
+                description={t.dashboard.noEventsDesc}
+                actionLabel={t.dashboard.addTimeBlock}
                 onAction={() => openQuickCapture('schedule')}
                 iconColor="#A9C8E8"
               />
@@ -508,11 +471,11 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <StickyNote className="w-4 h-4 text-[#F1B8CC]" />
                 <h2 className="text-sm sm:text-base font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Recent Notes & Ideas
+                  {t.dashboard.recentNotesTitle}
                 </h2>
                 {recentActiveNotes.length > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FDF2F7] text-[#D96B91] dark:bg-[#301E26] dark:text-[#F1B8CC]">
-                    {recentActiveNotes.length} notes
+                    {recentActiveNotes.length}
                   </span>
                 )}
               </div>
@@ -527,7 +490,7 @@ export const DashboardView: React.FC = () => {
                   className="text-xs font-semibold text-[#A995D8] hover:text-[#9680C9] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Add Note</span>
+                  <span>{t.dashboard.addNote}</span>
                 </button>
                 <span className="text-[#898493] text-xs">·</span>
                 <button
@@ -535,7 +498,7 @@ export const DashboardView: React.FC = () => {
                   onClick={() => setActiveTab('notes')}
                   className="text-xs font-semibold text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7] inline-flex items-center gap-1 transition-colors cursor-pointer"
                 >
-                  <span>View All</span>
+                  <span>{t.dashboard.viewAll}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -544,9 +507,9 @@ export const DashboardView: React.FC = () => {
             {recentActiveNotes.length === 0 ? (
               <EmptyState
                 icon={StickyNote}
-                title="No notes recorded yet"
-                description="Jot down quick thoughts, project brainstorms, or study notes with beautiful pastel cards."
-                actionLabel="+ Create First Note"
+                title={t.dashboard.noNotesTitle}
+                description={t.dashboard.noNotesDesc}
+                actionLabel={t.dashboard.createFirstNote}
                 onAction={() => {
                   setNoteToEdit(null);
                   setIsEditorOpen(true);
@@ -580,7 +543,7 @@ export const DashboardView: React.FC = () => {
           {/* 5. QUICK ACTIONS PANEL (4 Distinct Functional Pastel Actions) */}
           <BaseCard>
             <h3 className="text-sm font-bold text-[#34313D] dark:text-[#F4F2F7] mb-3">
-              Quick Actions
+              {t.dashboard.quickActions}
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
               {/* Action 1: Add Task */}
@@ -593,10 +556,10 @@ export const DashboardView: React.FC = () => {
                   <CheckSquare className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Add Task
+                  {t.dashboard.addTask}
                 </div>
                 <div className="text-[10px] text-[#898493] dark:text-[#9E99A8] line-clamp-1">
-                  Create new to-do
+                  {t.dashboard.createNewTodo}
                 </div>
               </button>
 
@@ -610,10 +573,10 @@ export const DashboardView: React.FC = () => {
                   <CalendarPlus className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Add Schedule
+                  {t.dashboard.addSchedule}
                 </div>
                 <div className="text-[10px] text-[#898493] dark:text-[#9E99A8] line-clamp-1">
-                  Block your time
+                  {t.dashboard.blockYourTime}
                 </div>
               </button>
 
@@ -632,10 +595,12 @@ export const DashboardView: React.FC = () => {
                   <Flame className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  {timerState.isRunning ? 'View Focus' : 'Start Focus'}
+                  {timerState.isRunning ? t.dashboard.viewFocus : t.dashboard.startFocus}
                 </div>
                 <div className="text-[10px] text-[#898493] dark:text-[#9E99A8] line-clamp-1">
-                  {timerState.isRunning ? 'Active session' : '25m Pomodoro'}
+                  {timerState.isRunning
+                    ? t.dashboard.activeSession
+                    : `${user?.preferences?.pomodoroDurationMinutes ?? 25}m ${t.focus.pomodoro}`}
                 </div>
               </button>
 
@@ -649,10 +614,10 @@ export const DashboardView: React.FC = () => {
                   <StickyNote className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Create Note
+                  {t.dashboard.createNote}
                 </div>
                 <div className="text-[10px] text-[#898493] dark:text-[#9E99A8] line-clamp-1">
-                  Capture ideas
+                  {t.dashboard.captureIdeas}
                 </div>
               </button>
             </div>
@@ -662,14 +627,14 @@ export const DashboardView: React.FC = () => {
           <BaseCard>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                Productivity Summary
+                {t.dashboard.productivitySummary}
               </h3>
               <button
                 type="button"
                 onClick={() => setActiveTab('analytics')}
                 className="text-xs font-semibold text-[#A995D8] hover:underline cursor-pointer"
               >
-                Details
+                {t.dashboard.details}
               </button>
             </div>
 
@@ -704,10 +669,12 @@ export const DashboardView: React.FC = () => {
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span className="text-xl font-bold font-mono tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-                    {stats.todayCompletionRate}%
+                    {stats.todayProductivityScore !== null
+                      ? stats.todayProductivityScore
+                      : `${stats.todayCompletionRate}%`}
                   </span>
                   <span className="text-[10px] font-medium text-[#898493] dark:text-[#9E99A8]">
-                    Score
+                    {stats.todayProductivityScore !== null ? t.dashboard.flowScore : t.dashboard.completionLabel}
                   </span>
                 </div>
               </div>
@@ -718,7 +685,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8]">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#B5DCCB]" />
-                  Tasks Completed
+                  {t.dashboard.tasksCompleted}
                 </span>
                 <span className="font-mono font-bold text-[#34313D] dark:text-[#F4F2F7]">
                   {stats.todayTasksCompleted}
@@ -728,7 +695,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8]">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#E9C46A]" />
-                  Tasks Pending
+                  {t.dashboard.tasksPending}
                 </span>
                 <span className="font-mono font-bold text-[#34313D] dark:text-[#F4F2F7]">
                   {stats.todayTasksPending}
@@ -738,7 +705,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8]">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#F1B8CC]" />
-                  Focus Duration
+                  {t.dashboard.focusDuration}
                 </span>
                 <span className="font-mono font-bold text-[#34313D] dark:text-[#F4F2F7]">
                   {stats.todayFocusMinutes} mins
@@ -748,12 +715,24 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8]">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#A9C8E8]" />
-                  Focus Sessions
+                  {t.dashboard.focusSessions}
                 </span>
                 <span className="font-mono font-bold text-[#34313D] dark:text-[#F4F2F7]">
                   {stats.todayFocusSessionsCount}
                 </span>
               </div>
+
+              {stats.goalProgress.hasAnyEnabledGoal && (
+                <div className="flex items-center justify-between text-[#898493] dark:text-[#9E99A8] pt-1 border-t border-dashed border-[#EEEAF2] dark:border-[#2D2838]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#A995D8]" />
+                    {t.dashboard.goalsReached}
+                  </span>
+                  <span className="font-mono font-bold text-[#34313D] dark:text-[#F4F2F7]">
+                    {stats.goalProgress.achievedCount}/{stats.goalProgress.enabledCount}
+                  </span>
+                </div>
+              )}
             </div>
           </BaseCard>
 
@@ -763,7 +742,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#A995D8]" />
                 <h3 className="text-sm font-bold text-[#34313D] dark:text-[#F4F2F7]">
-                  Recent Activity
+                  {t.dashboard.recentActivity}
                 </h3>
               </div>
               {activities.length > 0 && (
@@ -775,7 +754,7 @@ export const DashboardView: React.FC = () => {
 
             {activities.length === 0 ? (
               <p className="text-xs text-[#898493] dark:text-[#9E99A8] py-4 text-center">
-                No recent activity recorded yet today. Complete a task or start a focus session to see your progress here!
+                {t.dashboard.noRecentActivity}
               </p>
             ) : (
               <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
@@ -814,7 +793,7 @@ export const DashboardView: React.FC = () => {
                     </div>
 
                     <span className="text-[10px] text-[#898493] dark:text-[#9E99A8] shrink-0 font-medium whitespace-nowrap">
-                      {formatRelativeTime(item.timestamp)}
+                      {formatRelativeTime(item.timestamp, language)}
                     </span>
                   </div>
                 ))}

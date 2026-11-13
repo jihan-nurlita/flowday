@@ -55,5 +55,10 @@ export const FIRESTORE_BLUEPRINT = {
       fields: ['id', 'userId', 'date', 'completedTasks', 'totalTasks', 'focusDuration', 'reflection', 'createdAt'],
       rules: 'allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;',
     },
+    productivity_goals: {
+      path: 'productivity_goals/{goalId}',
+      fields: ['id', 'userId', 'dailyTaskGoal', 'weeklyTaskGoal', 'dailyFocusGoalMinutes', 'weeklyFocusGoalMinutes', 'createdAt', 'updatedAt'],
+      rules: 'allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;',
+    },
   },
 };

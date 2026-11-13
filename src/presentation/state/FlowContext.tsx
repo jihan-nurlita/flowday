@@ -12,7 +12,8 @@ import { Note } from '../../domain/entities/note';
 import { FocusSession, FocusSessionType } from '../../domain/entities/focus_session';
 import { AppNotification } from '../../domain/entities/notification';
 import { DailyReview } from '../../domain/entities/daily_review';
-import { User } from '../../domain/entities/user';
+import { ProductivityGoals } from '../../domain/entities/productivity_goal';
+import { AppLanguageCode, User } from '../../domain/entities/user';
 import { FirebaseSyncState } from '../../data/datasources/firebase_blueprint';
 import { storageEngine } from '../../data/datasources/storage_engine';
 import {
@@ -23,14 +24,19 @@ import {
   focusRepo,
   notificationRepo,
   dailyReviewRepo,
+  productivityGoalRepo,
   userRepo,
 } from '../../data/repositories/repository_impl';
 import { ActivityItem, ActivityType } from '../../domain/entities/activity';
 import { generateId } from '../../core/utils/id';
-import { getTodayDateString } from '../../core/utils/date';
-import { expandSchedulesForDate } from '../../core/utils/calendar';
+import { getTodayDateString, setActiveDateFormattingConfig } from '../../core/utils/date';
+import { getTranslations, TranslationDictionary } from '../../core/i18n/translations';
+import {
+  calculateTodayDashboardSummary,
+  GoalProgressResult,
+} from '../../data/services/analytics_service';
 import { notificationService, PlatformPermission } from '../../data/services/notification_service';
-import { useAuth } from './AuthContext';
+import { PrefSyncStatus, useAuth } from './AuthContext';
 
 interface QuickCaptureState {
   isOpen: boolean;
@@ -52,6 +58,7 @@ interface FlowContextValue {
   focusSessions: FocusSession[];
   notifications: AppNotification[];
   todayReview: DailyReview | null;
+  productivityGoals: ProductivityGoals | null;
   activities: ActivityItem[];
   syncState: FirebaseSyncState;
 
@@ -75,6 +82,10 @@ interface FlowContextValue {
     overdueTasksCount: number;
     activeTasksTotal: number;
     completedTasksTotal: number;
+    weeklyTasksCompleted: number;
+    weeklyCompletionRate: number;
+    todayProductivityScore: number | null;
+    goalProgress: GoalProgressResult;
   };
 
   // Overlays state
@@ -97,6 +108,7 @@ interface FlowContextValue {
     isRunning: boolean;
     mode: FocusSessionType;
     activeTaskId: string | null;
+    completedFocusCycles: number;
     start: () => void;
     pause: () => void;
     reset: () => void;
@@ -135,6 +147,14 @@ interface FlowContextValue {
   }) => Promise<FocusSession>;
 
   saveDailyReview: (reflection: string) => Promise<DailyReview>;
+  saveProductivityGoals: (
+    updates: Partial<
+      Pick<
+        ProductivityGoals,
+        'dailyTaskGoal' | 'weeklyTaskGoal' | 'dailyFocusGoalMinutes' | 'weeklyFocusGoalMinutes'
+      >
+    >
+  ) => Promise<ProductivityGoals>;
 
   // Notifications & Reminders
   unreadNotificationsCount: number;
@@ -163,7 +183,16 @@ interface FlowContextValue {
 
   logActivity: (type: ActivityType, title: string, description?: string, color?: string) => void;
 
+  // Language & Preferences
+  language: AppLanguageCode;
+  t: TranslationDictionary;
+  prefSyncStatus: PrefSyncStatus;
+  prefSaveError: string | null;
+  hasPendingPrefSync: boolean;
+  retrySyncPreferences: () => Promise<void>;
   updateUserPreferences: (prefs: Partial<User['preferences']>) => Promise<void>;
+  clearLocalCache: () => { clearedKeys: number };
+  exportPersonalData: () => string;
   exportBackup: () => string;
   importBackup: (json: string) => boolean;
   resetDatabase: () => void;
@@ -183,6 +212,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [todayReview, setTodayReview] = useState<DailyReview | null>(null);
+  const [productivityGoals, setProductivityGoals] = useState<ProductivityGoals | null>(null);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   // Sync state
@@ -230,15 +260,39 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Timer State (Pomodoro)
+  const getDurationSecondsForMode = useCallback(
+    (mode: FocusSessionType, prefs?: User['preferences']): number => {
+      if (mode === 'short_break') {
+        return Math.max(1, prefs?.shortBreakMinutes ?? 5) * 60;
+      }
+      if (mode === 'long_break') {
+        return Math.max(1, prefs?.longBreakMinutes ?? 15) * 60;
+      }
+      if (mode === 'deep_work') {
+        return 45 * 60;
+      }
+      return Math.max(1, prefs?.pomodoroDurationMinutes ?? 25) * 60;
+    },
+    []
+  );
+
   const defaultPomodoroSeconds = 25 * 60;
   const [timerMode, setTimerMode] = useState<FocusSessionType>('pomodoro');
   const [timeLeft, setTimeLeft] = useState<number>(defaultPomodoroSeconds);
   const [totalDuration, setTotalDuration] = useState<number>(defaultPomodoroSeconds);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
   const [activeFocusTaskId, setActiveFocusTaskId] = useState<string | null>(null);
+  const [completedFocusCycles, setCompletedFocusCycles] = useState<number>(0);
 
   // Load and refresh all collections for current authenticated user
-  const { currentUser: authUser } = useAuth();
+  const {
+    currentUser: authUser,
+    updatePreferences: authUpdatePreferences,
+    prefSyncStatus,
+    prefSaveError,
+    hasPendingPrefSync,
+    retrySyncPreferences,
+  } = useAuth();
 
   const refreshAllData = useCallback(async () => {
     const currentUid = authUser?.uid || 'usr_flowday_default';
@@ -272,13 +326,14 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
       c = await categoryRepo.getAll(currentUid);
     }
 
-    const [t, s, allNotes, f, notifs, review] = await Promise.all([
+    const [t, s, allNotes, f, notifs, review, loadedGoals] = await Promise.all([
       taskRepo.getAll(currentUid),
       scheduleRepo.getAll(currentUid),
       noteRepo.getAll(currentUid, true),
       focusRepo.getAll(currentUid),
       notificationRepo.getAll(currentUid),
       dailyReviewRepo.getByDate(currentUid, getTodayDateString()),
+      productivityGoalRepo.getByUserId(currentUid),
     ]);
 
     const acts = storageEngine
@@ -294,10 +349,12 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFocusSessions(f);
     setNotifications(notifs);
     setTodayReview(review);
+    setProductivityGoals(loadedGoals);
     setActivities(acts);
 
-    // Apply theme
-    const theme = (loadedUser?.preferences as any)?.themeMode || (loadedUser?.preferences as any)?.theme || 'system';
+    // Apply theme, language & date formatting config
+    const prefs = loadedUser?.preferences;
+    const theme = prefs?.themeMode || prefs?.theme || 'system';
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else if (theme === 'light') {
@@ -306,7 +363,36 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.classList.toggle('dark', isDark);
     }
+    if (prefs) {
+      document.documentElement.lang = prefs.language === 'id' ? 'id' : 'en';
+      setActiveDateFormattingConfig({
+        language: prefs.language || 'en',
+        dateFormat: prefs.dateFormat || 'MMM d, yyyy',
+        timeFormat: prefs.timeFormat || '24h',
+        startOfWeek: prefs.startOfWeek || 'monday',
+      });
+    }
   }, [authUser]);
+
+  // Apply idle focus duration changes only when timer is unstarted & not running
+  useEffect(() => {
+    if (!isTimerRunning && timeLeft === totalDuration) {
+      const nextSeconds = getDurationSecondsForMode(timerMode, user?.preferences);
+      if (nextSeconds !== totalDuration) {
+        setTimeLeft(nextSeconds);
+        setTotalDuration(nextSeconds);
+      }
+    }
+  }, [
+    user?.preferences?.pomodoroDurationMinutes,
+    user?.preferences?.shortBreakMinutes,
+    user?.preferences?.longBreakMinutes,
+    timerMode,
+    isTimerRunning,
+    timeLeft,
+    totalDuration,
+    getDurationSecondsForMode,
+  ]);
 
   // Initial load and subscriptions
   useEffect(() => {
@@ -322,6 +408,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
       storageEngine.subscribe('notifications', refreshAllData),
       storageEngine.subscribe('users', refreshAllData),
       storageEngine.subscribe('daily_reviews', refreshAllData),
+      storageEngine.subscribe('productivity_goals', refreshAllData),
       storageEngine.subscribe('activities', refreshAllData),
     ];
 
@@ -338,7 +425,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [refreshAllData]);
 
-  // Pomodoro countdown ticker
+  // Pomodoro countdown ticker with Focus Preferences (sound, haptics, auto-start, long break interval)
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isTimerRunning && timeLeft > 0) {
@@ -346,35 +433,45 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
-      // Auto record session completion
-      if (user) {
-        focusRepo.create({
-          userId: user.uid,
-          taskId: activeFocusTaskId || undefined,
-          startTime: new Date(Date.now() - totalDuration * 1000).toISOString(),
-          endTime: new Date().toISOString(),
-          duration: totalDuration,
-          sessionType: timerMode,
-          completed: true,
-        }).then(() => {
-          // Log real activity
-          const act: ActivityItem = {
-            id: generateId('act'),
-            userId: user.uid,
-            type: 'focus_completed',
-            title: `Completed ${Math.round(totalDuration / 60)}m Focus Session`,
-            description: timerMode.replace('_', ' '),
-            color: '#F1B8CC',
-            timestamp: new Date().toISOString(),
-          };
-          const list = storageEngine.getCollection<ActivityItem>('activities');
-          storageEngine.setCollection<ActivityItem>('activities', [act, ...list.filter(a => a.userId === user.uid)].slice(0, 30));
-        });
+      const finishedMode = timerMode;
+      const finishedDuration = totalDuration;
+      const prefs = user?.preferences;
 
-        // Add notification
-        const focusNotifTitle = 'Focus session completed!';
-        const focusNotifMsg = `Great job! You finished a ${Math.round(totalDuration / 60)}-minute ${timerMode.replace('_', ' ')} flow session.`;
+      // Record session completion
+      if (user) {
+        focusRepo
+          .create({
+            userId: user.uid,
+            taskId: activeFocusTaskId || undefined,
+            startTime: new Date(Date.now() - finishedDuration * 1000).toISOString(),
+            endTime: new Date().toISOString(),
+            duration: finishedDuration,
+            sessionType: finishedMode,
+            completed: true,
+          })
+          .then(() => {
+            const act: ActivityItem = {
+              id: generateId('act'),
+              userId: user.uid,
+              type: 'focus_completed',
+              title: `Completed ${Math.round(finishedDuration / 60)}m Focus Session`,
+              description: finishedMode.replace('_', ' '),
+              color: '#F1B8CC',
+              timestamp: new Date().toISOString(),
+            };
+            const list = storageEngine.getCollection<ActivityItem>('activities');
+            storageEngine.setCollection<ActivityItem>(
+              'activities',
+              [act, ...list.filter((a) => a.userId === user.uid)].slice(0, 30)
+            );
+          });
+
+        const focusNotifTitle =
+          finishedMode === 'short_break' || finishedMode === 'long_break'
+            ? 'Break completed!'
+            : 'Focus session completed!';
+        const focusNotifMsg = `Great job! You finished a ${Math.round(finishedDuration / 60)}-minute ${finishedMode.replace('_', ' ')} flow session.`;
+
         notificationRepo.create({
           userId: user.uid,
           title: focusNotifTitle,
@@ -385,67 +482,79 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isRead: false,
           status: 'delivered',
         });
-        notificationService.dispatchNotification({
-          title: focusNotifTitle,
-          message: focusNotifMsg,
-          type: 'focus',
-          preferences: user.preferences,
-        });
+
+        const inQuietHours = notificationService.isQuietHours(prefs);
+        if (!inQuietHours) {
+          if (prefs?.timerSoundEnabled !== false) {
+            notificationService.playGentleChime();
+          }
+          if (prefs?.timerHapticsEnabled !== false) {
+            notificationService.triggerVibration();
+          }
+          if (prefs?.notificationEnabled !== false && prefs?.focusNotificationsEnabled !== false) {
+            notificationService.showSystemNotification(focusNotifTitle, {
+              body: focusNotifMsg,
+            });
+          }
+        }
+      }
+
+      // Transition to next phase & honor auto-start preferences
+      if (finishedMode === 'pomodoro' || finishedMode === 'deep_work') {
+        const nextCycles = completedFocusCycles + 1;
+        const intervalCount = Math.max(1, prefs?.longBreakInterval ?? 4);
+        const nextMode: FocusSessionType =
+          nextCycles % intervalCount === 0 ? 'long_break' : 'short_break';
+        const nextSeconds = getDurationSecondsForMode(nextMode, prefs);
+        setCompletedFocusCycles(nextCycles);
+        setTimerMode(nextMode);
+        setTotalDuration(nextSeconds);
+        setTimeLeft(nextSeconds);
+        setIsTimerRunning(Boolean(prefs?.autoStartBreaks));
+      } else {
+        const nextMode: FocusSessionType = 'pomodoro';
+        const nextSeconds = getDurationSecondsForMode(nextMode, prefs);
+        setTimerMode(nextMode);
+        setTotalDuration(nextSeconds);
+        setTimeLeft(nextSeconds);
+        setIsTimerRunning(Boolean(prefs?.autoStartFocus));
       }
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timeLeft, totalDuration, timerMode, activeFocusTaskId, user]);
+  }, [
+    isTimerRunning,
+    timeLeft,
+    totalDuration,
+    timerMode,
+    activeFocusTaskId,
+    user,
+    completedFocusCycles,
+    getDurationSecondsForMode,
+  ]);
 
-  const setTimerModeHandler = useCallback((mode: FocusSessionType) => {
-    setIsTimerRunning(false);
-    setTimerMode(mode);
-    let seconds = 25 * 60;
-    if (mode === 'short_break') seconds = 5 * 60;
-    if (mode === 'long_break') seconds = 15 * 60;
-    if (mode === 'deep_work') seconds = 45 * 60;
-    setTimeLeft(seconds);
-    setTotalDuration(seconds);
-  }, []);
+  const setTimerModeHandler = useCallback(
+    (mode: FocusSessionType) => {
+      setIsTimerRunning(false);
+      setTimerMode(mode);
+      const seconds = getDurationSecondsForMode(mode, user?.preferences);
+      setTimeLeft(seconds);
+      setTotalDuration(seconds);
+    },
+    [getDurationSecondsForMode, user?.preferences]
+  );
 
-  // Real Computed Statistics (calculated dynamically from actual database records)
+  // Real Computed Statistics (calculated dynamically via analytics_service single source of truth)
   const stats = useMemo(() => {
-    const today = getTodayDateString();
-    const todayTasks = tasks.filter((t) => t.dueDate === today);
-    const todayTasksTotal = todayTasks.length;
-    const todayTasksCompleted = todayTasks.filter((t) => t.isCompleted).length;
-    const todayTasksPending = Math.max(0, todayTasksTotal - todayTasksCompleted);
-    const todayCompletionRate =
-      todayTasksTotal > 0 ? Math.round((todayTasksCompleted / todayTasksTotal) * 100) : 0;
-
-    const todayFocus = focusSessions
-      .filter((s) => s.completed && s.createdAt.startsWith(today))
-      .reduce((sum, s) => sum + (s.duration || 0), 0);
-
-    const todayFocusSessionsCount = focusSessions.filter(
-      (s) => s.completed && s.createdAt.startsWith(today)
-    ).length;
-
-    const todaySchedulesList = expandSchedulesForDate(schedules, today);
-    const todaySchedulesCount = todaySchedulesList.length;
-
-    const urgentImportantCount = tasks.filter(
-      (t) => !t.isCompleted && (t.priority === 'urgent_important' || t.priority === 'high')
-    ).length;
-
-    const upcomingSchedulesCount = schedules.filter((s) => s.date >= today).length;
-
-    // Overdue task detection (incomplete, has dueDate, dueDate < today or past today endTime)
-    const now = new Date();
-    const currentHourMin = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const overdueTasksCount = tasks.filter((t) => {
-      if (t.isCompleted || !t.dueDate) return false;
-      if (t.dueDate < today) return true;
-      if (t.dueDate === today && t.endTime && t.endTime < currentHourMin) return true;
-      return false;
-    }).length;
-
-    const activeTasksTotal = tasks.filter((t) => !t.isCompleted).length;
-    const completedTasksTotal = tasks.filter((t) => t.isCompleted).length;
+    const summary = calculateTodayDashboardSummary(
+      tasks,
+      schedules,
+      focusSessions,
+      categories,
+      productivityGoals,
+      {
+        startOfWeek: user?.preferences?.startOfWeek || 'monday',
+      }
+    );
 
     const activeNotesCount = notes.filter((n) => !n.isDeleted).length;
     const pinnedNotesCount = notes.filter((n) => !n.isDeleted && n.isPinned).length;
@@ -453,26 +562,13 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const trashNotesCount = trashNotes.length;
 
     return {
-      todayTasksTotal,
-      todayTasksCompleted,
-      todayTasksPending,
-      todayCompletionRate,
-      todayFocusSeconds: todayFocus,
-      todayFocusMinutes: Math.round(todayFocus / 60),
-      todayFocusSessionsCount,
-      totalFocusSessions: focusSessions.filter((s) => s.completed).length,
+      ...summary,
       activeNotesCount,
       pinnedNotesCount,
       favoriteNotesCount,
       trashNotesCount,
-      upcomingSchedulesCount,
-      todaySchedulesCount,
-      urgentImportantCount,
-      overdueTasksCount,
-      activeTasksTotal,
-      completedTasksTotal,
     };
-  }, [tasks, focusSessions, schedules, notes, trashNotes]);
+  }, [tasks, focusSessions, schedules, categories, productivityGoals, user?.preferences?.startOfWeek, notes, trashNotes]);
 
   const logActivity = useCallback(
     (type: ActivityType, title: string, description?: string, color?: string) => {
@@ -767,6 +863,24 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [user, stats, refreshAllData]
   );
 
+  const saveProductivityGoals = useCallback(
+    async (
+      updates: Partial<
+        Pick<
+          ProductivityGoals,
+          'dailyTaskGoal' | 'weeklyTaskGoal' | 'dailyFocusGoalMinutes' | 'weeklyFocusGoalMinutes'
+        >
+      >
+    ) => {
+      const uid = user ? user.uid : 'usr_flowday_default';
+      const saved = await productivityGoalRepo.saveGoals(uid, updates);
+      setProductivityGoals(saved);
+      await refreshAllData();
+      return saved;
+    },
+    [user, refreshAllData]
+  );
+
   // Notifications & Reminders
   const unreadNotificationsCount = useMemo(
     () => notifications.filter((n) => !n.isRead).length,
@@ -915,11 +1029,34 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user, tasks, schedules, notifications, refreshAllData]);
 
+  const language: AppLanguageCode = user?.preferences?.language === 'id' ? 'id' : 'en';
+  const t = useMemo(() => getTranslations(language), [language]);
+
   const updateUserPreferences = useCallback(
     async (prefs: Partial<User['preferences']>) => {
       const uid = user ? user.uid : 'usr_flowday_default';
-      const updated = await userRepo.updatePreferences(uid, prefs);
-      setUser(updated);
+      if (authUser) {
+        await authUpdatePreferences(prefs);
+        // Keep local repository synced without masking AuthContext errors
+        await userRepo.updatePreferences(uid, prefs).catch(() => undefined);
+      } else {
+        const updated = await userRepo.updatePreferences(uid, prefs);
+        setUser(updated);
+      }
+
+      const nextLanguage = prefs.language || user?.preferences?.language || 'en';
+      const nextDateFormat = prefs.dateFormat || user?.preferences?.dateFormat || 'MMM d, yyyy';
+      const nextTimeFormat = prefs.timeFormat || user?.preferences?.timeFormat || '24h';
+      const nextStartOfWeek = prefs.startOfWeek || user?.preferences?.startOfWeek || 'monday';
+
+      document.documentElement.lang = nextLanguage === 'id' ? 'id' : 'en';
+      setActiveDateFormattingConfig({
+        language: nextLanguage,
+        dateFormat: nextDateFormat,
+        timeFormat: nextTimeFormat,
+        startOfWeek: nextStartOfWeek,
+      });
+
       const themeVal = prefs.themeMode || prefs.theme;
       if (themeVal) {
         if (themeVal === 'dark') {
@@ -932,8 +1069,16 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     },
-    [user]
+    [user, authUser, authUpdatePreferences]
   );
+
+  const clearLocalCache = useCallback(() => {
+    return storageEngine.clearLocalCache();
+  }, []);
+
+  const exportPersonalData = useCallback(() => {
+    return storageEngine.exportPersonalData(user);
+  }, [user]);
 
   const exportBackup = useCallback(() => {
     return storageEngine.exportBackup();
@@ -958,14 +1103,17 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...prev,
       syncStatus: 'syncing',
     }));
+    if (authUser && hasPendingPrefSync) {
+      retrySyncPreferences().catch(() => undefined);
+    }
     setTimeout(() => {
       setSyncState((prev) => ({
         ...prev,
-        syncStatus: 'synced',
+        syncStatus: navigator.onLine ? 'synced' : 'offline',
         lastSyncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }));
     }, 600);
-  }, []);
+  }, [authUser, hasPendingPrefSync, retrySyncPreferences]);
 
   const timerControls = {
     timeLeft,
@@ -973,6 +1121,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isRunning: isTimerRunning,
     mode: timerMode,
     activeTaskId: activeFocusTaskId,
+    completedFocusCycles,
     start: () => setIsTimerRunning(true),
     pause: () => setIsTimerRunning(false),
     reset: () => {
@@ -995,6 +1144,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     focusSessions,
     notifications,
     todayReview,
+    productivityGoals,
     activities,
     syncState,
     stats,
@@ -1029,6 +1179,7 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toggleNoteFavorite,
     recordFocusSession,
     saveDailyReview,
+    saveProductivityGoals,
     unreadNotificationsCount,
     markNotificationRead,
     markNotificationUnread,
@@ -1051,7 +1202,15 @@ export const FlowProvider: React.FC<{ children: React.ReactNode }> = ({ children
       close: closeGlobalScheduleModal,
     },
     logActivity,
+    language,
+    t,
+    prefSyncStatus,
+    prefSaveError,
+    hasPendingPrefSync,
+    retrySyncPreferences,
     updateUserPreferences,
+    clearLocalCache,
+    exportPersonalData,
     exportBackup,
     importBackup,
     resetDatabase,

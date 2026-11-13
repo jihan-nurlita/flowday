@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFlow } from '../state/FlowContext';
 import { Schedule, ScheduleOccurrence } from '../../domain/entities/schedule';
 import { Task } from '../../domain/entities/task';
-import { getTodayDateString, formatFullDate } from '../../core/utils/date';
+import { getTodayDateString, formatMonthYear } from '../../core/utils/date';
 import {
   CalendarMonthGrid,
 } from '../components/calendar/CalendarMonthGrid';
@@ -30,29 +30,36 @@ import {
 import {
   CategoryManagerModal,
 } from '../components/tasks/CategoryManagerModal';
-import { PrimaryButton, SecondaryButton } from '../components/buttons/AppButtons';
+import { PrimaryButton } from '../components/buttons/AppButtons';
 import {
-  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Plus,
   Search,
   Filter,
   X,
-  Layers,
-  Clock,
   Settings,
 } from 'lucide-react';
 
 export type CalendarViewMode = 'month' | 'week' | 'day';
 
 export const CalendarView: React.FC = () => {
-  const { schedules, tasks, categories, toggleTaskComplete } = useFlow();
+  const { user, schedules, tasks, categories, toggleTaskComplete, t, language } = useFlow();
+
+  const prefCalendarView = user?.preferences?.calendarDefaultView || 'month';
+  const startOfWeek = user?.preferences?.startOfWeek || 'monday';
+  const showCompletedTasks = user?.preferences?.showCompletedTasksInCalendar !== false;
+  const showTaskDeadlines = user?.preferences?.showTaskDeadlinesInCalendar !== false;
+  const showScheduleEvents = user?.preferences?.showScheduleEventsInCalendar !== false;
 
   // Navigation & View Mode
-  const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(prefCalendarView);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
+
+  useEffect(() => {
+    setViewMode(prefCalendarView);
+  }, [prefCalendarView]);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,13 +103,12 @@ export const CalendarView: React.FC = () => {
   };
 
   // Month and Year string
-  const monthYearLabel = currentDate.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  const monthYearLabel = formatMonthYear(currentDate, language);
 
-  // Filtered schedules & tasks
+  // Filtered schedules & tasks (honoring Calendar Preferences)
   const filteredSchedules = useMemo(() => {
+    if (!showScheduleEvents) return [];
+
     return schedules.filter((s) => {
       // Search
       if (searchQuery.trim()) {
@@ -139,6 +145,7 @@ export const CalendarView: React.FC = () => {
       return a.startTime.localeCompare(b.startTime);
     });
   }, [
+    showScheduleEvents,
     schedules,
     searchQuery,
     selectedCategoryFilter,
@@ -150,27 +157,31 @@ export const CalendarView: React.FC = () => {
   ]);
 
   const filteredTasks = useMemo(() => {
+    if (!showTaskDeadlines) return [];
     if (eventTypeFilter === 'schedules') return [];
 
-    return tasks.filter((t) => {
-      if (!t.dueDate) return false;
+    return tasks.filter((taskItem) => {
+      if (!taskItem.dueDate) return false;
+      if (!showCompletedTasks && (taskItem.isCompleted || taskItem.status === 'completed')) {
+        return false;
+      }
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const cat = categories.find((c) => c.id === t.categoryId);
-        const matchesTitle = t.title.toLowerCase().includes(q);
-        const matchesDesc = (t.description || '').toLowerCase().includes(q);
+        const cat = categories.find((c) => c.id === taskItem.categoryId);
+        const matchesTitle = taskItem.title.toLowerCase().includes(q);
+        const matchesDesc = (taskItem.description || '').toLowerCase().includes(q);
         const matchesCat = cat?.name.toLowerCase().includes(q) || false;
         if (!matchesTitle && !matchesDesc && !matchesCat) return false;
       }
 
-      if (selectedCategoryFilter !== 'all' && t.categoryId !== selectedCategoryFilter) {
+      if (selectedCategoryFilter !== 'all' && taskItem.categoryId !== selectedCategoryFilter) {
         return false;
       }
 
       return true;
     });
-  }, [tasks, searchQuery, selectedCategoryFilter, eventTypeFilter, categories]);
+  }, [showTaskDeadlines, showCompletedTasks, tasks, searchQuery, selectedCategoryFilter, eventTypeFilter, categories]);
 
   // Handler helpers
   const handleOpenAddSchedule = (dateStr?: string, timeStr?: string) => {
@@ -225,10 +236,10 @@ export const CalendarView: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#34313D] dark:text-[#F4F2F7]">
-            Calendar
+            {t.calendar.title}
           </h2>
           <p className="text-xs sm:text-sm text-[#898493] dark:text-[#9E99A8] mt-0.5">
-            Plan your time and stay organized.
+            {t.calendar.subtitle}
           </p>
         </div>
 
@@ -262,7 +273,7 @@ export const CalendarView: React.FC = () => {
             onClick={goToToday}
             className="px-3.5 py-2 rounded-2xl text-xs font-semibold bg-white dark:bg-[#201D27] border border-[#EEEAF2] dark:border-[#2D2838] hover:border-[#A995D8] text-[#34313D] dark:text-[#F4F2F7] shadow-2xs transition-colors cursor-pointer"
           >
-            Today
+            {t.calendar.today}
           </button>
 
           {/* View Mode Switcher */}
@@ -276,7 +287,7 @@ export const CalendarView: React.FC = () => {
                   : 'text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7]'
               }`}
             >
-              Month
+              {t.calendar.month}
             </button>
             <button
               type="button"
@@ -287,7 +298,7 @@ export const CalendarView: React.FC = () => {
                   : 'text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7]'
               }`}
             >
-              Week
+              {t.calendar.week}
             </button>
             <button
               type="button"
@@ -298,7 +309,7 @@ export const CalendarView: React.FC = () => {
                   : 'text-[#898493] hover:text-[#34313D] dark:hover:text-[#F4F2F7]'
               }`}
             >
-              Day
+              {t.calendar.day}
             </button>
           </div>
 
@@ -311,8 +322,8 @@ export const CalendarView: React.FC = () => {
                 ? 'border-[#A995D8] bg-[#F4F1FA] text-[#A995D8] dark:bg-[#2C253B]'
                 : 'border-[#EEEAF2] dark:border-[#2D2838] bg-white dark:bg-[#201D27] text-[#898493] hover:text-[#34313D]'
             }`}
-            aria-label="Filter events"
-            title="Search and filter events"
+            aria-label={t.calendar.filters}
+            title={t.calendar.filters}
           >
             <Filter className="w-4 h-4" />
           </button>
@@ -334,7 +345,7 @@ export const CalendarView: React.FC = () => {
             icon={Plus}
             onClick={() => handleOpenAddSchedule(selectedDate)}
           >
-            Add Schedule
+            {t.calendar.addSchedule}
           </PrimaryButton>
         </div>
       </div>
@@ -474,6 +485,8 @@ export const CalendarView: React.FC = () => {
               schedules={filteredSchedules}
               tasks={filteredTasks}
               categories={categories}
+              startOfWeek={startOfWeek}
+              language={language}
               onSelectDate={(d) => setSelectedDate(d)}
               onSelectSchedule={handleSelectSchedule}
               onSelectTask={handleSelectTask}
@@ -508,10 +521,12 @@ export const CalendarView: React.FC = () => {
           schedules={filteredSchedules}
           tasks={filteredTasks}
           categories={categories}
+          startOfWeek={startOfWeek}
+          language={language}
           onSelectDate={(d) => setSelectedDate(d)}
           onSelectSchedule={handleSelectSchedule}
           onSelectTask={handleSelectTask}
-          onAddScheduleAt={(d, t) => handleOpenAddSchedule(d, t)}
+          onAddScheduleAt={(d, timeStr) => handleOpenAddSchedule(d, timeStr)}
         />
       )}
 
@@ -525,7 +540,7 @@ export const CalendarView: React.FC = () => {
           onSelectSchedule={handleSelectSchedule}
           onSelectTask={handleSelectTask}
           onToggleTaskComplete={toggleTaskComplete}
-          onAddScheduleAt={(d, t) => handleOpenAddSchedule(d, t)}
+          onAddScheduleAt={(d, timeStr) => handleOpenAddSchedule(d, timeStr)}
         />
       )}
 

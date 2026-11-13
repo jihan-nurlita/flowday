@@ -1,8 +1,10 @@
+import { UserPreferences } from '../../domain/entities/user';
+
 /**
  * Default configurations and identifiers for FlowDay
  */
 
-export type NavigationTab = 
+export type NavigationTab =
   | 'dashboard'
   | 'tasks'
   | 'calendar'
@@ -12,6 +14,24 @@ export type NavigationTab =
   | 'notifications'
   | 'settings'
   | 'profile';
+
+export const APP_INFO = {
+  name: 'FlowDay',
+  tagline: 'Plan Your Day, Find Your Flow.',
+  version: '1.0.0',
+  buildNumber: '2026.11.12',
+  description:
+    'Smart Daily Planner & Productivity Manager built with Premium Soft Pastel clarity to help you organize tasks, plan schedules, stay focused, capture notes, and track genuine productivity.',
+  privacyPolicyUrl: null as string | null,
+  termsOfServiceUrl: null as string | null,
+  openSourceLicenses: [
+    { name: 'React', version: '19.0.1', license: 'MIT' },
+    { name: 'Firebase Web SDK', version: '13.2.0', license: 'Apache-2.0' },
+    { name: 'Tailwind CSS', version: '4.3.3', license: 'MIT' },
+    { name: 'Lucide React', version: '0.546.0', license: 'ISC' },
+    { name: 'Motion', version: '12.23.24', license: 'MIT' },
+  ],
+} as const;
 
 export const APP_ROUTES = [
   { id: 'dashboard' as NavigationTab, label: 'Dashboard', icon: 'LayoutDashboard' },
@@ -69,6 +89,52 @@ export const PRIORITY_CONFIG = {
   },
 } as const;
 
+export const DEFAULT_USER_PREFERENCES: UserPreferences = {
+  themeMode: 'system',
+  theme: 'system',
+  language: 'en',
+  dateFormat: 'MMM d, yyyy',
+  timeFormat: '24h',
+  startOfWeek: 'monday',
+  firstDayOfWeek: 1,
+  timezone:
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC',
+  notificationEnabled: true,
+  taskRemindersEnabled: true,
+  scheduleRemindersEnabled: true,
+  focusNotificationsEnabled: true,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00',
+  dailySummaryEnabled: true,
+  dailySummaryTime: '08:00',
+  taskCompletionCelebration: true,
+  defaultTaskPriority: 'medium',
+  defaultTaskCategory: '',
+  defaultTaskView: 'list',
+  defaultTaskSort: 'newest',
+  startOfDay: '08:00',
+  pomodoroDurationMinutes: 25,
+  shortBreakMinutes: 5,
+  longBreakMinutes: 15,
+  longBreakInterval: 4,
+  autoStartBreaks: false,
+  autoStartFocus: false,
+  timerSoundEnabled: true,
+  timerHapticsEnabled: true,
+  calendarDefaultView: 'month',
+  defaultScheduleReminder: '15m',
+  showCompletedTasksInCalendar: true,
+  showTaskDeadlinesInCalendar: true,
+  showScheduleEventsInCalendar: true,
+  defaultEventDurationMinutes: 60,
+  offlineSyncEnabled: true,
+};
+
 export const DEFAULT_USER = {
   uid: 'usr_flowday_default',
   fullName: 'FlowDay Explorer',
@@ -77,30 +143,5 @@ export const DEFAULT_USER = {
   photoUrl: '',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  preferences: {
-    themeMode: 'system' as const,
-    theme: 'system' as const,
-    language: 'en' as const,
-    startOfWeek: 'monday' as const,
-    timeFormat: '24h' as const,
-    notificationEnabled: true,
-    taskRemindersEnabled: true,
-    scheduleRemindersEnabled: true,
-    focusNotificationsEnabled: true,
-    soundEnabled: true,
-    vibrationEnabled: true,
-    quietHoursEnabled: false,
-    quietHoursStart: '22:00',
-    quietHoursEnd: '07:00',
-    dailySummaryEnabled: true,
-    dailySummaryTime: '08:00',
-    taskCompletionCelebration: true,
-    pomodoroDurationMinutes: 25,
-    shortBreakMinutes: 5,
-    longBreakMinutes: 15,
-    autoStartBreaks: false,
-    firstDayOfWeek: 1, // Monday
-    offlineSyncEnabled: true,
-  },
+  preferences: DEFAULT_USER_PREFERENCES,
 };
-

@@ -6,7 +6,9 @@ export interface FocusSession {
   taskId?: string;
   startTime: string; // ISO
   endTime: string; // ISO
-  duration: number; // in seconds
+  duration: number; // actual elapsed duration in seconds
+  plannedDuration?: number; // planned duration in seconds
+  pausedDuration?: number; // paused seconds subtracted from active focus time
   sessionType: FocusSessionType;
   completed: boolean;
   createdAt: string;

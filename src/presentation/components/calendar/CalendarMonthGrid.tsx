@@ -6,12 +6,16 @@ import { getMonthMatrix, MonthGridDay, expandSchedulesForDate } from '../../../c
 import { formatTime } from '../../../core/utils/date';
 import { CheckCircle2, Circle, Clock, CheckSquare } from 'lucide-react';
 
+import { StartOfWeekOption, AppLanguageCode } from '../../../domain/entities/user';
+
 interface CalendarMonthGridProps {
   currentDate: Date;
   selectedDate: string;
   schedules: Schedule[];
   tasks: Task[];
   categories: Category[];
+  startOfWeek?: StartOfWeekOption;
+  language?: AppLanguageCode;
   onSelectDate: (dateStr: string) => void;
   onSelectSchedule: (occurrence: ScheduleOccurrence) => void;
   onSelectTask: (task: Task) => void;
@@ -23,20 +27,32 @@ export const CalendarMonthGrid: React.FC<CalendarMonthGridProps> = ({
   schedules,
   tasks,
   categories,
+  startOfWeek = 'monday',
+  language = 'en',
   onSelectDate,
   onSelectSchedule,
   onSelectTask,
 }) => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const matrix = getMonthMatrix(year, month);
+  const matrix = getMonthMatrix(year, month, startOfWeek);
 
   const getCategoryColor = (categoryId: string) => {
     const cat = categories.find((c) => c.id === categoryId);
     return cat?.color || '#A995D8';
   };
 
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdays =
+    language === 'id'
+      ? startOfWeek === 'sunday'
+        ? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+        : ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+      : startOfWeek === 'sunday'
+      ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const isWeekendCol = (idx: number) =>
+    startOfWeek === 'sunday' ? idx === 0 || idx === 6 : idx >= 5;
 
   return (
     <div className="bg-white dark:bg-[#201D27] rounded-3xl border border-[#EEEAF2] dark:border-[#2D2838] overflow-hidden shadow-xs">
@@ -46,7 +62,7 @@ export const CalendarMonthGrid: React.FC<CalendarMonthGridProps> = ({
           <div
             key={day}
             className={`py-2.5 text-center text-[11px] font-bold uppercase tracking-wider ${
-              idx >= 5 ? 'text-[#F1B8CC]' : 'text-[#898493] dark:text-[#9E99A8]'
+              isWeekendCol(idx) ? 'text-[#F1B8CC]' : 'text-[#898493] dark:text-[#9E99A8]'
             }`}
           >
             {day}
@@ -117,17 +133,16 @@ export const CalendarMonthGrid: React.FC<CalendarMonthGridProps> = ({
                           e.stopPropagation();
                           onSelectSchedule(occ);
                         }}
-                        className="truncate text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-md font-medium transition-all hover:opacity-80 flex items-center gap-1 cursor-pointer"
+                        className="truncate text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-md font-medium transition-all hover:opacity-80 flex items-center gap-1 cursor-pointer text-[#34313D] dark:text-[#F4F2F7]"
                         style={{
-                          backgroundColor: `${catColor}20`,
-                          color: '#34313D',
+                          backgroundColor: `${catColor}25`,
                           borderLeft: `2.5px solid ${catColor}`,
                         }}
-                        title={`${occ.schedule.title} (${occ.schedule.isAllDay ? 'All Day' : occ.schedule.startTime})`}
+                        title={`${occ.schedule.title} (${occ.schedule.isAllDay ? 'All Day' : formatTime(occ.schedule.startTime)})`}
                       >
                         {!occ.schedule.isAllDay && (
-                          <span className="font-mono text-[9px] text-[#898493] shrink-0">
-                            {occ.schedule.startTime.slice(0, 5)}
+                          <span className="font-mono text-[9px] text-[#898493] dark:text-[#C5BFC9] shrink-0">
+                            {formatTime(occ.schedule.startTime)}
                           </span>
                         )}
                         <span className="truncate">{occ.schedule.title}</span>
